@@ -111,15 +111,12 @@ export default function Entrar() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     autoComplete="username"
-                    hint={handle ? `Você vai aparecer como @${handle}. ` + (handleProblem(handle) ?? 'Conferimos se está livre ao continuar.') : 'Único na comunidade. Letras sem acento, números, ponto ou _ (3 a 20).'}
+                    hint={handle.length >= 3 ? handleProblem(handle) ?? undefined : undefined}
                   />
                 </>
               ) : null}
               <Field
                 label="E-mail"
-                hint={mode === 'signup'
-                  ? `Pode ser o pessoal: ele continua valendo depois da formatura. Para confirmar que você é aluno, depois enviamos um código ao seu @${community.emailDomains[0]}.`
-                  : undefined}
                 value={email}
                 onChangeText={setEmail}
                 placeholder="seu@email.com"

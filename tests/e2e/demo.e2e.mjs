@@ -50,7 +50,6 @@ await check('cadastro exige nick, curso e semestre', async () => {
   await page.getByPlaceholder('ex.: ana.ribeiro').fill('@Teste Fundador');
   await visible('Use só letras sem acento', { exact: false });
   await page.getByPlaceholder('ex.: ana.ribeiro').fill('teste.fundador');
-  await visible('Você vai aparecer como @teste.fundador', { exact: false });
   await page.getByText('Entrar no Campus').click();
   await visible('Informe seu curso.');
   await page.getByPlaceholder('Ex.: Engenharia Civil').fill('Direito');
