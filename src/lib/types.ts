@@ -11,6 +11,8 @@ export interface Community {
   city: string;
   /** Domínios de e-mail institucional aceitos para verificação automática. */
   emailDomains: string[];
+  /** Cursos de graduação oferecidos na lista do cadastro (há também "Outro curso"). */
+  courses: string[];
   /** Códigos de convite válidos (no backend real, vêm da tabela `invites`). */
   inviteCodes: string[];
 }

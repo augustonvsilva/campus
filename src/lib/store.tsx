@@ -174,7 +174,7 @@ function useCampusState() {
       local((s, m) => ({ ...s, events: s.events.map((e) => (e.id === id ? fn(e, m) : e)) }));
     const mkComment = (authorId: ID, text: string): Comment => ({ id: newId(), authorId, text: text.trim(), createdAt: Date.now() });
 
-    /** Valida formato e disponibilidade do nick; devolve normalizado ou lança com a mensagem para o usuário. */
+    /** Valida formato e disponibilidade do nome de usuário; devolve normalizado ou lança com a mensagem para o usuário. */
     const checkHandle = async (raw: string): Promise<string> => {
       const problem = handleProblem(raw);
       if (problem) throw new Error(problem);
@@ -183,7 +183,7 @@ function useCampusState() {
       const free = SUPABASE_ENABLED
         ? await remote.handleAvailable(handle)
         : !Object.values(stateRef.current.users).some((u) => u.id !== m && u.handle === handle);
-      if (!free) throw new Error('Esse nick já está em uso. Escolha outro.');
+      if (!free) throw new Error('Esse nome de usuário já está em uso. Escolha outro.');
       return handle;
     };
 

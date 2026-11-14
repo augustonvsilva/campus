@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
 
-import { Avatar, Badge, Button, Card, Chip, ChipRow, Field, Notice, Section, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Chip, ChipRow, CoursePicker, Field, Notice, Section, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { HANDLE_MAX, normalizeHandle } from '@/lib/handle';
 import { GroupCard } from '@/components/social';
 import { pickAvatar } from '@/lib/images';
@@ -218,7 +218,7 @@ export default function Perfil() {
     setEditing(true);
   };
   const save = () => edit.run(async () => {
-    if (course.trim().length < 2) throw new Error('Informe seu curso.');
+    if (course.trim().length < 2) throw new Error('Escolha seu curso.');
     if (!semester) throw new Error('Escolha seu semestre.');
     const nick = normalizeHandle(handle) === me.handle ? me.handle : await actions.checkHandle(handle);
     actions.updateProfile({
@@ -271,9 +271,9 @@ export default function Perfil() {
       {editing ? (
         <Card>
           <Field label="Nome" value={name} onChangeText={setName} />
-          <Field label="Nick" value={handle} onChangeText={(v) => setHandle(normalizeHandle(v).slice(0, HANDLE_MAX))}
+          <Field label="Nome de usuário" value={handle} onChangeText={(v) => setHandle(normalizeHandle(v).slice(0, HANDLE_MAX))}
             autoCapitalize="none" autoCorrect={false} hint={`Você aparece como @${normalizeHandle(handle) || '…'}`} />
-          <Field label="Curso" value={course} onChangeText={setCourse} placeholder="Ex.: Engenharia Civil" />
+          <CoursePicker value={course} onChange={setCourse} courses={community.courses} />
           <SemesterPicker value={semester} onChange={setSemester} />
           <Field label="Interesses" value={interests} onChangeText={setInterests} hint="Separados por vírgula: futsal, fotografia, games…" />
           <View style={{ flexDirection: 'row', gap: 10 }}>

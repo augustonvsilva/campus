@@ -22,7 +22,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
 |---|---|
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
-| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 144 cenários de segurança: convite, nick único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
+| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 144 cenários de segurança: convite, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
 | `npm run test:e2e` | 27 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
 
 ## Colocar o Supabase no ar
@@ -53,7 +53,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
 | Área | Status |
 |---|---|
 | Convite + login por código enviado ao e-mail (pessoal ou institucional) | ✅ |
-| Cadastro com nick único (validado no app e no banco), curso e semestre obrigatórios | ✅ |
+| Cadastro com nome de usuário único (validado no app e no banco), curso (lista com busca ou "Outro") e semestre obrigatórios | ✅ |
 | Vínculo confirmado por código no e-mail institucional (um endereço por conta, hash no banco, limite de tentativas e reenvios) | ✅ |
 | Sem acesso ao e-mail institucional: comprovante enviado pelo perfil, aprovado na moderação | ✅ |
 | Convites individuais: 3 ativos por pessoa, 5 usos cada, com rastreio de quem convidou | ✅ |

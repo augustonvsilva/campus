@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
+import { useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import {
   Image, Pressable, StyleProp, StyleSheet, Switch, Text, TextInput, TextInputProps, View, ViewStyle,
@@ -161,6 +162,76 @@ export function SemesterPicker({ value, onChange, label = 'Semestre' }: { value:
       <ChipRow>
         {SEMESTERS.map((s) => <Chip key={s} label={s} active={value === s} onPress={() => onChange(s)} />)}
       </ChipRow>
+    </View>
+  );
+}
+
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/**
+ * Escolha do curso numa lista com busca. "Outro curso" abre um campo livre
+ * (para cursos que ainda não estão na lista). Valor fora da lista = "Outro".
+ */
+export function CoursePicker({ value, onChange, courses }: { value: string; onChange: (v: string) => void; courses: string[] }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [other, setOther] = useState(!!value && !courses.includes(value));
+  const filtered = courses.filter((c) => fold(c).includes(fold(query.trim())));
+
+  const choose = (course: string | null) => {
+    setOther(course === null);
+    onChange(course ?? '');
+    setOpen(false);
+    setQuery('');
+  };
+
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>Curso</Text>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel="Escolher curso"
+        accessibilityState={{ expanded: open }}
+        style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+        <Text style={{ color: other || value ? colors.text : colors.muted, fontSize: 15, flex: 1 }}>
+          {other ? 'Outro curso' : value || 'Escolha seu curso'}
+        </Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, padding: 8, gap: 2 }}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar curso"
+            placeholderTextColor={colors.muted}
+            autoCorrect={false}
+            style={[styles.input, { marginBottom: 4 }]}
+          />
+          {filtered.map((c) => (
+            <Pressable key={c} onPress={() => choose(c)} accessibilityRole="button"
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 8, borderRadius: radius.sm }}>
+              <Text style={{ color: colors.text, fontSize: 15, flex: 1 }}>{c}</Text>
+              {c === value && !other ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
+            </Pressable>
+          ))}
+          {!filtered.length ? <Text style={[styles.hint, { padding: 8 }]}>Nenhum curso encontrado.</Text> : null}
+          <Pressable onPress={() => choose(null)} accessibilityRole="button"
+            style={{ paddingVertical: 10, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: colors.border, marginTop: 4 }}>
+            <Text style={{ color: colors.accent, fontSize: 15, fontWeight: '700' }}>Outro curso (digitar)</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {other && !open ? (
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          placeholder="Digite o nome do seu curso"
+          placeholderTextColor={colors.muted}
+          style={styles.input}
+        />
+      ) : null}
     </View>
   );
 }

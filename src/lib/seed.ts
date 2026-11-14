@@ -23,9 +23,9 @@ export function seedData(now = Date.now()) {
 
   const users: Record<string, User> = {};
   [
-    user('u_ana', 'Ana Ribeiro', 'Arquitetura', '5º', '#FFB86B', ['design', 'café', 'exposições']),
+    user('u_ana', 'Ana Ribeiro', 'Arquitetura e Urbanismo', '5º', '#FFB86B', ['design', 'café', 'exposições']),
     user('u_bruno', 'Bruno Teixeira', 'Engenharia Civil', '3º', '#7FD8FF', ['futsal', 'atlética']),
-    user('u_carla', 'Carla Mendes', 'Publicidade', '6º', '#FF8FB1', ['festas', 'fotografia']),
+    user('u_carla', 'Carla Mendes', 'Publicidade e Propaganda', '6º', '#FF8FB1', ['festas', 'fotografia']),
     user('u_diego', 'Diego Sato', 'Ciência da Computação', '4º', '#C8F25A', ['games', 'estudos']),
     user('u_eduarda', 'Eduarda Lima', 'Direito', '2º', '#B69CFF', ['debates', 'música']),
     user('u_felipe', 'Felipe Costa', 'Administração', '7º', '#6EE7B7', ['corrida', 'empreendedorismo']),
@@ -35,7 +35,7 @@ export function seedData(now = Date.now()) {
   // Perfil reservado: detalhes só para conexões mútuas.
   users.u_eduarda = { ...users.u_eduarda!, profileVisible: false };
   // Aluno sem e-mail institucional aguardando verificação (aparece no painel de moderação).
-  users.u_henrique = { ...user('u_henrique', 'Henrique Alves', 'Economia', '1º', '#7FD8FF', ['xadrez']), verification: 'pending' };
+  users.u_henrique = { ...user('u_henrique', 'Henrique Alves', 'Ciências Econômicas', '1º', '#7FD8FF', ['xadrez']), verification: 'pending' };
 
   // Jogo de hoje: 19h, ou daqui a 1h se já passou das 18h.
   const gameStart = Math.max(at(0, 19, 0, now), now + HOUR);

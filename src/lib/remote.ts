@@ -24,11 +24,11 @@ function must<T extends { error: { message: string } | null }>(res: T): T {
 
 export function friendlyError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes('profiles_handle_key') || m.includes('nick indisponível')) return 'Esse nick já está em uso. Escolha outro.';
-  if (m.includes('handle_format') || m.includes('nick inválido')) return 'Nick inválido. Use de 3 a 20 letras sem acento, números, ponto ou _.';
+  if (m.includes('profiles_handle_key') || m.includes('nick indisponível')) return 'Esse nome de usuário já está em uso. Escolha outro.';
+  if (m.includes('handle_format') || m.includes('nick inválido')) return 'Nome de usuário inválido. Use de 3 a 20 letras sem acento, números, ponto ou _.';
   if (m.includes('convite')) return 'Convite inválido ou esgotado.';
-  // O Supabase Auth esconde a mensagem do trigger de cadastro; o nick já foi conferido antes.
-  if (m.includes('database error saving new user')) return 'Não foi possível criar a conta. Confira o código de convite (ou se o nick acabou de ser usado) e tente de novo.';
+  // O Supabase Auth esconde a mensagem do trigger de cadastro; o nome de usuário já foi conferido antes.
+  if (m.includes('database error saving new user')) return 'Não foi possível criar a conta. Confira o código de convite (ou se o nome de usuário acabou de ser usado) e tente de novo.';
   if (m.includes('signups not allowed')) return 'Não encontramos uma conta com esse e-mail. Para entrar pela primeira vez, você precisa de um convite.';
   if (m.includes('token has expired') || m.includes('invalid') && m.includes('otp')) return 'Código inválido ou expirado. Peça um novo.';
   if (m.includes('rate limit') || m.includes('security purposes')) return 'Muitas tentativas. Espere um pouco e tente de novo.';
