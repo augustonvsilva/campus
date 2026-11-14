@@ -27,6 +27,9 @@ export function friendlyError(message: string): string {
   if (m.includes('profiles_handle_key') || m.includes('nick indisponível')) return 'Esse nome de usuário já está em uso. Escolha outro.';
   if (m.includes('handle_format') || m.includes('nick inválido')) return 'Nome de usuário inválido. Use de 3 a 20 letras sem acento, números, ponto ou _.';
   if (m.includes('convite')) return 'Convite inválido ou esgotado.';
+  if (m.includes('invalid login credentials')) return 'E-mail ou senha incorretos. Se você ainda não criou senha, use "Esqueci a senha".';
+  if (m.includes('should be different from the old password')) return 'A nova senha precisa ser diferente da atual.';
+  if (m.includes('password should') || m.includes('weak password') || m.includes('weak_password')) return 'Senha fraca. Use pelo menos 8 caracteres, com letras e números.';
   // O Supabase Auth esconde a mensagem do trigger de cadastro; o nome de usuário já foi conferido antes.
   if (m.includes('database error saving new user')) return 'Não foi possível criar a conta. Confira o código de convite (ou se o nome de usuário acabou de ser usado) e tente de novo.';
   if (m.includes('signups not allowed')) return 'Não encontramos uma conta com esse e-mail. Para entrar pela primeira vez, você precisa de um convite.';
@@ -285,6 +288,18 @@ export async function confirmInstitutionalCode(code: string) {
   const res = must(await sb().rpc('confirm_institutional_code', { p_code: code.trim() }));
   const status = res.data as string;
   if (status !== 'ok') throw new Error(CONFIRM_MESSAGES[status] ?? 'Não foi possível confirmar o código.');
+}
+
+export async function signInWithPassword(email: string, password: string) {
+  const { data, error } = await sb().auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+  if (error) throw new Error(friendlyError(error.message));
+  return data.session;
+}
+
+/** Cria ou troca a senha do usuário logado. */
+export async function setPassword(password: string) {
+  const { error } = await sb().auth.updateUser({ password });
+  if (error) throw new Error(friendlyError(error.message));
 }
 
 export async function signOut() {

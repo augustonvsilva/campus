@@ -165,6 +165,35 @@ function VerificationSection() {
   );
 }
 
+/** Criar ou trocar a senha (contas antigas, sem senha, também usam isto). */
+function PasswordSection() {
+  const { actions } = useStore();
+  const { busy, error, run } = useAsync();
+  const [password, setPassword] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  const save = () => run(async () => {
+    setSaved(false);
+    await actions.setPassword(password);
+    setPassword('');
+    setSaved(true);
+  });
+
+  return (
+    <Section title="Senha">
+      <Card>
+        <Text style={styles.muted}>Crie ou troque a senha que você usa para entrar. Se esquecer, dá para entrar com um código enviado ao seu e-mail.</Text>
+        <Field label="Nova senha" value={password} onChangeText={(v) => { setPassword(v); setSaved(false); }} secureTextEntry
+          autoComplete="new-password" textContentType="newPassword" placeholder="Mínimo de 8 caracteres, com letras e números" />
+        {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
+        {saved ? <Notice icon="checkmark-circle" text="Senha salva." /> : null}
+        <Button label={busy ? 'Salvando…' : 'Salvar senha'} icon="key-outline" compact variant="secondary"
+          disabled={busy || !password} onPress={save} />
+      </Card>
+    </Section>
+  );
+}
+
 function InviteSection() {
   const { actions, invites } = useStore();
   const me = useMe();
@@ -299,6 +328,8 @@ export default function Perfil() {
       {isModerator(me) ? (
         <Button label="Painel de moderação" icon="shield-half-outline" variant="secondary" onPress={() => router.push('/moderacao')} />
       ) : null}
+
+      <PasswordSection />
 
       <Section title="Privacidade">
         <Card>

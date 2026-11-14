@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Chip, ChipRow, CoursePicker, Field, Notice, SemesterPicker, styles, ToggleRow } from '@/components/ui';
-import { handleProblem, HANDLE_MAX, normalizeHandle } from '@/lib/handle';
+import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
 import { useStore } from '@/lib/store';
 import { colors } from '@/theme';
 
@@ -12,15 +12,21 @@ type Mode = 'signup' | 'login';
 // Entrada por convite. O login pode usar qualquer e-mail (o pessoal é recomendado, pois continua
 // valendo depois da formatura). O vínculo com a universidade é confirmado depois, no perfil,
 // com um código enviado ao e-mail institucional.
-// No modo Supabase, o acesso é confirmado com um código de 6 dígitos enviado por e-mail.
+//
+// Senha: criada no cadastro e usada para entrar. No modo Supabase, o cadastro confirma o e-mail com
+// um código de 6 dígitos (a senha é gravada logo depois). "Esqueci a senha" entra com código por
+// e-mail e permite criar uma senha nova na mesma tela.
 export default function Entrar() {
   const { actions, community, backend } = useStore();
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('signup');
   const [step, setStep] = useState<'form' | 'code'>('form');
+  const [codeFor, setCodeFor] = useState<'signup' | 'reset'>('signup');
   const [invite, setInvite] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [handle, setHandle] = useState('');
   const [course, setCourse] = useState('');
   const [semester, setSemester] = useState('');
@@ -41,17 +47,27 @@ export default function Entrar() {
     }
   };
 
+  const emailOk = () => /^\S+@\S+\.\S+$/.test(email.trim());
+
   const validate = (): string | null => {
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return 'Digite um e-mail válido.';
-    if (mode === 'login') return null;
+    if (!emailOk()) return 'Digite um e-mail válido.';
+    if (mode === 'login') return password ? null : 'Digite sua senha.';
     if (!invite.trim()) return 'Digite o código de convite que você recebeu.';
     if (name.trim().length < 2) return 'Conta pra gente seu nome.';
     const nick = handleProblem(handle);
     if (nick) return nick;
+    const pw = passwordProblem(password);
+    if (pw) return pw;
     if (course.trim().length < 2) return 'Escolha seu curso.';
     if (!semester) return 'Escolha seu semestre.';
     if (!accepted) return 'Para entrar, aceite as regras da comunidade.';
     return null;
+  };
+
+  const switchMode = (m: Mode) => {
+    setMode(m);
+    setPassword('');
+    setError(null);
   };
 
   const submit = () => {
@@ -60,16 +76,35 @@ export default function Entrar() {
     void run(async () => {
       const needsCode = await actions.startSignIn(
         mode === 'login'
-          ? { mode, email }
-          : { mode, email, name, handle, course, semester, inviteCode: invite },
+          ? { mode, email, password }
+          : { mode, email, password, name, handle, course, semester, inviteCode: invite },
       );
-      if (needsCode) setStep('code');
+      if (needsCode) {
+        setCodeFor('signup');
+        setStep('code');
+      }
+    });
+  };
+
+  const forgot = () => {
+    if (!emailOk()) return setError('Digite seu e-mail para receber o código.');
+    void run(async () => {
+      const needsCode = await actions.startSignIn({ mode: 'code', email });
+      if (needsCode) {
+        setCodeFor('reset');
+        setNewPassword('');
+        setStep('code');
+      }
     });
   };
 
   const confirm = () => {
     if (!/^\d{6}$/.test(code.trim())) return setError('O código tem 6 números.');
-    void run(() => actions.confirmCode(email, code));
+    if (codeFor === 'reset' && newPassword) {
+      const pw = passwordProblem(newPassword);
+      if (pw) return setError(pw);
+    }
+    void run(() => actions.confirmCode(email, code, codeFor === 'reset' ? newPassword || undefined : undefined));
   };
 
   return (
@@ -87,15 +122,19 @@ export default function Entrar() {
             <Text style={styles.muted}>Enviamos um código de 6 números para {email.trim().toLowerCase()}.</Text>
             <Field label="Código" value={code} onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
               keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" placeholder="000000" />
+            {codeFor === 'reset' ? (
+              <Field label="Nova senha (opcional)" value={newPassword} onChangeText={setNewPassword} secureTextEntry
+                autoComplete="new-password" textContentType="newPassword" placeholder="Mínimo de 8 caracteres" />
+            ) : null}
             {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
             <Button label={busy ? 'Confirmando…' : 'Entrar'} icon="arrow-forward" disabled={busy} onPress={confirm} />
-            <Button label="Usar outro e-mail" variant="ghost" compact onPress={() => { setStep('form'); setCode(''); setError(null); }} />
+            <Button label="Voltar" variant="ghost" compact onPress={() => { setStep('form'); setCode(''); setError(null); }} />
           </View>
         ) : (
           <>
             <ChipRow>
-              <Chip label="Tenho um convite" icon="mail-open-outline" active={mode === 'signup'} onPress={() => { setMode('signup'); setError(null); }} />
-              <Chip label="Já tenho conta" icon="log-in-outline" active={mode === 'login'} onPress={() => { setMode('login'); setError(null); }} />
+              <Chip label="Tenho um convite" icon="mail-open-outline" active={mode === 'signup'} onPress={() => switchMode('signup')} />
+              <Chip label="Já tenho conta" icon="log-in-outline" active={mode === 'login'} onPress={() => switchMode('login')} />
             </ChipRow>
 
             <View style={{ gap: 14 }}>
@@ -124,6 +163,16 @@ export default function Entrar() {
                 autoCapitalize="none"
                 autoComplete="email"
               />
+              <Field
+                label="Senha"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                placeholder={mode === 'signup' ? 'Mínimo de 8 caracteres' : 'Sua senha'}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                textContentType={mode === 'signup' ? 'newPassword' : 'password'}
+                onSubmitEditing={mode === 'login' ? submit : undefined}
+              />
               {mode === 'signup' ? (
                 <>
                   <CoursePicker value={course} onChange={setCourse} courses={community.courses} />
@@ -141,9 +190,12 @@ export default function Entrar() {
             {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
 
             <Button
-              label={busy ? 'Enviando…' : backend === 'supabase' ? 'Receber código por e-mail' : 'Entrar no Campus'}
+              label={busy ? 'Enviando…' : mode === 'signup' && backend === 'supabase' ? 'Receber código por e-mail' : 'Entrar no Campus'}
               icon="arrow-forward" disabled={busy} onPress={submit}
             />
+            {mode === 'login' ? (
+              <Button label="Esqueci a senha (entrar com código)" variant="ghost" compact disabled={busy} onPress={forgot} />
+            ) : null}
 
             {backend === 'demo' ? (
               <Text style={[styles.hint, { textAlign: 'center' }]}>

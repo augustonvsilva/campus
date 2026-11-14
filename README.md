@@ -14,7 +14,7 @@ Sem `.env.local`, o app roda no **modo demonstração**: os dados são fictício
 - Convites: `MACK2026` (membro) ou `FUNDADORES` (admin, com acesso ao painel de moderação).
 - Cadastro com qualquer e-mail (o pessoal é recomendado). Para publicar, o aluno confirma o vínculo no perfil com um código enviado ao e-mail institucional (`@mackenzista.com.br` ou `@mackenzie.br`). Na demo, o código aparece na tela.
 
-Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por código enviado por e-mail, dados compartilhados entre todos e atualização em tempo real.
+Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e-mail e senha (cadastro e "Esqueci a senha" confirmam o e-mail com um código), dados compartilhados entre todos e atualização em tempo real.
 
 ## Verificações
 
@@ -23,7 +23,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
 | `npm run test:db` | Aplica as migrations num Postgres em memória e roda 144 cenários de segurança: convite, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
-| `npm run test:e2e` | 27 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
+| `npm run test:e2e` | 29 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
 
 ## Colocar o Supabase no ar
 
@@ -32,6 +32,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
    - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
    - **CLI:** `npx supabase link --project-ref <ref>` e depois `npx supabase db push`.
 3. Em **Authentication → Email Templates → Magic Link**, inclua `{{ .Token }}` no texto, para o e-mail trazer o código de 6 dígitos. Exemplo: `Seu código do Campus: {{ .Token }}`.
+   Em **Authentication → Providers → Email**, defina o tamanho mínimo de senha como 8 (o app já exige 8, com letras e números) e deixe *Secure password change* desligado: a troca de senha no perfil não pede a senha antiga, já que a recuperação é feita por código no e-mail.
 4. Em **Authentication → SMTP**, configure um provedor próprio (Resend, SES…). O SMTP padrão do Supabase só envia poucos e-mails por hora.
 5. Publique a Edge Function que envia o código de vínculo ao e-mail institucional:
    ```bash
@@ -52,7 +53,8 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
 
 | Área | Status |
 |---|---|
-| Convite + login por código enviado ao e-mail (pessoal ou institucional) | ✅ |
+| Convite + login com e-mail (pessoal ou institucional) e senha; cadastro confirma o e-mail por código | ✅ |
+| "Esqueci a senha": entra com código por e-mail e cria nova senha; troca de senha no perfil | ✅ |
 | Cadastro com nome de usuário único (validado no app e no banco), curso (lista com busca ou "Outro") e semestre obrigatórios | ✅ |
 | Vínculo confirmado por código no e-mail institucional (um endereço por conta, hash no banco, limite de tentativas e reenvios) | ✅ |
 | Sem acesso ao e-mail institucional: comprovante enviado pelo perfil, aprovado na moderação | ✅ |

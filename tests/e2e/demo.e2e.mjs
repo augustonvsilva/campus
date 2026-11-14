@@ -51,6 +51,12 @@ await check('cadastro exige nome de usuário, curso e semestre', async () => {
   await visible('Use só letras sem acento', { exact: false });
   await page.getByPlaceholder('ex.: ana.ribeiro').fill('teste.fundador');
   await page.getByText('Entrar no Campus').click();
+  await visible('A senha precisa ter pelo menos 8 caracteres.');
+  await page.getByPlaceholder('Mínimo de 8 caracteres').fill('somenteletras');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Use letras e números na senha.');
+  await page.getByPlaceholder('Mínimo de 8 caracteres').fill('fundador2026');
+  await page.getByText('Entrar no Campus').click();
   await visible('Escolha seu curso.');
   await page.getByRole('button', { name: 'Escolher curso' }).click();
   await page.getByPlaceholder('Buscar curso').fill('ciencia');
@@ -352,6 +358,44 @@ await check('sair e entrar de novo com "Já tenho conta"', async () => {
   await page.getByText('Já tenho conta').click();
   await page.getByPlaceholder('seu@email.com').fill('teste@mackenzista.com.br');
   await page.getByText('Entrar no Campus').click();
+  await visible('Digite sua senha.');
+  await page.getByPlaceholder('Sua senha').fill('senhaerrada1');
+  await page.getByText('Entrar no Campus').click();
+  await visible('E-mail ou senha incorretos.');
+  await page.getByPlaceholder('Sua senha').fill('fundador2026');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Pergunte, recomende, combine algo…');
+});
+
+await check('trocar a senha no perfil e entrar com a nova', async () => {
+  await page.getByLabel('Abrir perfil').locator('visible=true').and(LIVE).first().click();
+  const field = page.getByPlaceholder('Mínimo de 8 caracteres, com letras e números').locator('visible=true').and(LIVE).first();
+  await field.fill('curta1');
+  await page.getByText('Salvar senha').locator('visible=true').and(LIVE).first().click();
+  await visible('A senha precisa ter pelo menos 8 caracteres.');
+  await field.fill('novasenha2026');
+  await page.getByText('Salvar senha').locator('visible=true').and(LIVE).first().click();
+  await visible('Senha salva.');
+  await page.getByText('Sair', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByText('Já tenho conta').click();
+  await page.getByPlaceholder('seu@email.com').fill('teste@mackenzista.com.br');
+  await page.getByPlaceholder('Sua senha').fill('fundador2026');
+  await page.getByText('Entrar no Campus').click();
+  await visible('E-mail ou senha incorretos.');
+  await page.getByPlaceholder('Sua senha').fill('novasenha2026');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Pergunte, recomende, combine algo…');
+});
+
+await check('entrar por "Esqueci a senha" (código por e-mail)', async () => {
+  await page.getByLabel('Abrir perfil').locator('visible=true').and(LIVE).first().click();
+  await page.getByText('Sair', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByText('Já tenho conta').click();
+  await page.getByPlaceholder('seu@email.com').fill('');
+  await page.getByText('Esqueci a senha (entrar com código)').click();
+  await visible('Digite seu e-mail para receber o código.');
+  await page.getByPlaceholder('seu@email.com').fill('teste@mackenzista.com.br');
+  await page.getByText('Esqueci a senha (entrar com código)').click();
   await visible('Pergunte, recomende, combine algo…');
 });
 
@@ -362,6 +406,7 @@ await check('cadastro com e-mail pessoal fica sem publicar até verificar', asyn
   await page.getByPlaceholder('Como você quer aparecer').fill('Aluna Pessoal');
   await page.getByPlaceholder('ex.: ana.ribeiro').fill('aluna.pessoal');
   await page.getByPlaceholder('seu@email.com').fill('aluna@gmail.com');
+  await page.getByPlaceholder('Mínimo de 8 caracteres').fill('aluna2026');
   await page.getByRole('button', { name: 'Escolher curso' }).click();
   await page.getByText('Outro curso (digitar)').click();
   await page.getByPlaceholder('Digite o nome do seu curso').fill('Gastronomia');

@@ -1,4 +1,4 @@
-// Regras do nome de usuário (@handle) e do semestre, compartilhadas por cadastro e perfil.
+// Regras do nome de usuário (@handle), do semestre e da senha, compartilhadas por cadastro e perfil.
 // As mesmas regras valem no banco (migration 0006), que é quem garante a unicidade.
 
 export const HANDLE_MIN = 3;
@@ -25,5 +25,16 @@ export function handleProblem(raw: string): string | null {
   if (!/^[a-z0-9._]+$/.test(h)) return 'Use só letras sem acento, números, ponto ou _ no nome de usuário.';
   if (h.startsWith('.') || h.endsWith('.') || h.includes('..')) return 'O nome de usuário não pode começar ou terminar com ponto, nem ter dois pontos seguidos.';
   if (RESERVED_HANDLES.includes(h)) return 'Esse nome de usuário é reservado. Escolha outro.';
+  return null;
+}
+
+// ── Senha ──
+export const PASSWORD_MIN = 8;
+
+/** Mensagem explicando o problema da senha, ou null se ela é aceitável. */
+export function passwordProblem(password: string): string | null {
+  if (password.length < PASSWORD_MIN) return `A senha precisa ter pelo menos ${PASSWORD_MIN} caracteres.`;
+  if (password.length > 72) return 'A senha pode ter no máximo 72 caracteres.';
+  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) return 'Use letras e números na senha.';
   return null;
 }

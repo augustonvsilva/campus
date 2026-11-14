@@ -10,7 +10,7 @@ import { AppState } from 'react-native';
 
 import { avatarColors } from '@/theme';
 import { ACTIVE_COMMUNITY, isInstitutionalEmail } from './community';
-import { handleProblem, normalizeHandle } from './handle';
+import { handleProblem, normalizeHandle, passwordProblem } from './handle';
 import type { PreparedImage } from './images';
 import * as remote from './remote';
 import { seedData } from './seed';
@@ -43,6 +43,8 @@ interface State {
   rides: Ride[];
   /** Quem segue quem: seguidor → seguidos. */
   following: Record<ID, ID[]>;
+  /** Só na demo: hash da senha de cada conta criada no aparelho. No Supabase, a senha fica no Auth. */
+  passwords: Record<ID, string>;
 }
 
 const defaultSettings: Settings = {
@@ -53,7 +55,7 @@ const defaultSettings: Settings = {
 
 const emptyState = (): State => ({
   session: null, users: {}, posts: [], events: [], boras: [], places: [], reports: [], blocked: [],
-  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {},
+  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {}, passwords: {},
 });
 
 const demoState = (): State => ({ ...emptyState(), ...seedData() });
@@ -69,8 +71,14 @@ function inviteCode() {
 }
 
 export type SignInInput =
-  | { mode: 'signup'; name: string; handle: string; email: string; course: string; semester: string; inviteCode: string }
-  | { mode: 'login'; email: string };
+  | { mode: 'signup'; name: string; handle: string; email: string; password: string; course: string; semester: string; inviteCode: string }
+  | { mode: 'login'; email: string; password: string }
+  /** Entrar com código por e-mail (esqueci a senha / conta sem senha). */
+  | { mode: 'code'; email: string };
+
+/** Demo: hash da senha (nunca guardamos a senha em texto, nem no aparelho). */
+const demoHash = (userId: ID, password: string) =>
+  Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `${userId}:${password}`);
 
 function useCampusState() {
   const [state, setState] = useState<State>(SUPABASE_ENABLED ? emptyState : demoState);
@@ -79,6 +87,8 @@ function useCampusState() {
   const [refreshing, setRefreshing] = useState(false);
   const stateRef = useRef(state);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Supabase: senha escolhida no cadastro, gravada assim que o código do e-mail é confirmado. */
+  const pendingPassword = useRef<string | null>(null);
   /** Demo: código de verificação pendente (no Supabase, ele só existe no banco e no e-mail). */
   const demoCode = useRef<{ email: string; code: string } | null>(null);
 
@@ -195,17 +205,33 @@ function useCampusState() {
       // ── Conta ──
       /** Retorna true quando é preciso digitar o código enviado por e-mail (modo Supabase). */
       async startSignIn(input: SignInInput): Promise<boolean> {
+        if (input.mode === 'signup') {
+          const problem = passwordProblem(input.password);
+          if (problem) throw new Error(problem);
+        }
         const handle = input.mode === 'signup' ? await checkHandle(input.handle) : '';
         if (SUPABASE_ENABLED) {
+          if (input.mode === 'login') {
+            const session = await remote.signInWithPassword(input.email, input.password);
+            if (session) await load(session.user.id);
+            return false;
+          }
+          pendingPassword.current = input.mode === 'signup' ? input.password : null;
           await remote.requestCode(input.email, input.mode === 'signup'
             ? { name: input.name, handle, course: input.course, semester: input.semester, inviteCode: input.inviteCode } : undefined);
           return true;
         }
         const s = stateRef.current;
         const email = input.email.trim().toLowerCase();
-        if (input.mode === 'login') {
+        if (input.mode !== 'signup') {
           const user = Object.values(s.users).find((u) => u.email === email);
           if (!user) throw new Error('Não encontramos uma conta com esse e-mail neste aparelho.');
+          // Demo: "entrar com código" entra direto (não há envio de e-mail).
+          if (input.mode === 'login') {
+            const saved = s.passwords[user.id];
+            if (!saved) throw new Error('Essa conta ainda não tem senha. Use "Esqueci a senha" para entrar com código e criar uma.');
+            if (saved !== await demoHash(user.id, input.password)) throw new Error('E-mail ou senha incorretos.');
+          }
           setState((x) => ({ ...x, session: { userId: user.id } }));
           return false;
         }
@@ -225,17 +251,38 @@ function useCampusState() {
           role: code === 'FUNDADORES' ? 'admin' : 'member',
           joinedAt: Date.now(),
         };
+        const passwordHash = await demoHash(id, input.password);
         setState((x) => ({
           ...x,
           users: { ...x.users, [id]: user },
+          passwords: { ...x.passwords, [id]: passwordHash },
           invites: x.invites.map((i) => (i.code === code ? { ...i, uses: i.uses + 1 } : i)),
           session: { userId: id },
         }));
         return false;
       },
-      async confirmCode(email: string, code: string) {
+      /** Confirma o código do e-mail. Grava a senha do cadastro ou a nova senha de "Esqueci a senha". */
+      async confirmCode(email: string, code: string, newPassword?: string) {
         const session = await remote.verifyCode(email, code);
-        if (session) await load(session.user.id);
+        const password = newPassword || pendingPassword.current;
+        pendingPassword.current = null;
+        if (!session) return;
+        if (password) {
+          // Se falhar, a pessoa já está logada: avisa e segue (dá para criar a senha no perfil).
+          await remote.setPassword(password).catch((e) =>
+            setError(`Você entrou, mas a senha não foi salva: ${errorMessage(e)} Crie uma no perfil.`));
+        }
+        await load(session.user.id);
+      },
+      /** Cria ou troca a senha da conta logada. */
+      async setPassword(password: string) {
+        const problem = passwordProblem(password);
+        if (problem) throw new Error(problem);
+        const m = me();
+        if (!m) throw new Error('Sem sessão');
+        if (SUPABASE_ENABLED) return remote.setPassword(password);
+        const hash = await demoHash(m, password);
+        setState((x) => ({ ...x, passwords: { ...x.passwords, [m]: hash } }));
       },
       signOut() {
         if (SUPABASE_ENABLED) void remote.signOut().catch(() => {});
