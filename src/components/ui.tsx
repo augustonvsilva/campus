@@ -154,6 +154,35 @@ export function Field({ label, hint, ...props }: TextInputProps & { label: strin
   );
 }
 
+/** Campo de senha com botão de olho para mostrar ou esconder o que foi digitado. */
+export function PasswordField({ label, hint, ...props }: Omit<TextInputProps, 'secureTextEntry'> & { label: string; hint?: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={{ justifyContent: 'center' }}>
+        <TextInput
+          placeholderTextColor={colors.muted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          {...props}
+          secureTextEntry={!visible}
+          style={[styles.input, { paddingRight: 48 }, props.style]}
+        />
+        <Pressable
+          onPress={() => setVisible((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={visible ? 'Esconder senha' : 'Mostrar senha'}
+          hitSlop={8}
+          style={{ position: 'absolute', right: 6, padding: 8 }}>
+          <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+        </Pressable>
+      </View>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+    </View>
+  );
+}
+
 /** Escolha do semestre em chips (1º a 12º). */
 export function SemesterPicker({ value, onChange, label = 'Semestre' }: { value: string; onChange: (v: string) => void; label?: string }) {
   return (

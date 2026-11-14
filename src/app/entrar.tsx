@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Chip, ChipRow, CoursePicker, Field, Notice, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { Button, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
 import { useStore } from '@/lib/store';
 import { colors } from '@/theme';
@@ -123,7 +123,7 @@ export default function Entrar() {
             <Field label="Código" value={code} onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
               keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" placeholder="000000" />
             {codeFor === 'reset' ? (
-              <Field label="Nova senha (opcional)" value={newPassword} onChangeText={setNewPassword} secureTextEntry
+              <PasswordField label="Nova senha (opcional)" value={newPassword} onChangeText={setNewPassword}
                 autoComplete="new-password" textContentType="newPassword" placeholder="Mínimo de 8 caracteres" />
             ) : null}
             {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
@@ -163,11 +163,10 @@ export default function Entrar() {
                 autoCapitalize="none"
                 autoComplete="email"
               />
-              <Field
+              <PasswordField
                 label="Senha"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
                 placeholder={mode === 'signup' ? 'Mínimo de 8 caracteres' : 'Sua senha'}
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 textContentType={mode === 'signup' ? 'newPassword' : 'password'}

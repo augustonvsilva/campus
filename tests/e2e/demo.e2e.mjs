@@ -56,6 +56,13 @@ await check('cadastro exige nome de usuário, curso e semestre', async () => {
   await page.getByText('Entrar no Campus').click();
   await visible('Use letras e números na senha.');
   await page.getByPlaceholder('Mínimo de 8 caracteres').fill('fundador2026');
+  const pw = page.getByPlaceholder('Mínimo de 8 caracteres');
+  if ((await pw.getAttribute('type')) !== 'password') throw new Error('senha deveria começar escondida');
+  await page.getByRole('button', { name: 'Mostrar senha' }).click();
+  if ((await pw.getAttribute('type')) === 'password') throw new Error('botão não mostrou a senha');
+  await shot('01c-senha-visivel');
+  await page.getByRole('button', { name: 'Esconder senha' }).click();
+  if ((await pw.getAttribute('type')) !== 'password') throw new Error('botão não escondeu a senha');
   await page.getByText('Entrar no Campus').click();
   await visible('Escolha seu curso.');
   await page.getByRole('button', { name: 'Escolher curso' }).click();

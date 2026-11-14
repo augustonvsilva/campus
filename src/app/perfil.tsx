@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
 
-import { Avatar, Badge, Button, Card, Chip, ChipRow, CoursePicker, Field, Notice, Section, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, Section, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { HANDLE_MAX, normalizeHandle } from '@/lib/handle';
 import { GroupCard } from '@/components/social';
 import { pickAvatar } from '@/lib/images';
@@ -183,7 +183,7 @@ function PasswordSection() {
     <Section title="Senha">
       <Card>
         <Text style={styles.muted}>Crie ou troque a senha que você usa para entrar. Se esquecer, dá para entrar com um código enviado ao seu e-mail.</Text>
-        <Field label="Nova senha" value={password} onChangeText={(v) => { setPassword(v); setSaved(false); }} secureTextEntry
+        <PasswordField label="Nova senha" value={password} onChangeText={(v) => { setPassword(v); setSaved(false); }}
           autoComplete="new-password" textContentType="newPassword" placeholder="Mínimo de 8 caracteres, com letras e números" />
         {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
         {saved ? <Notice icon="checkmark-circle" text="Senha salva." /> : null}
