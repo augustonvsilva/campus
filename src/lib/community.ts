@@ -9,14 +9,15 @@ export const MACKENZIE: Community = {
   city: 'São Paulo',
   // TODO: confirmar com a instituição os domínios usados por alunos.
   emailDomains: ['mackenzista.com.br', 'mackenzie.br'],
-  // TODO: conferir com a grade oficial de graduação (campus Higienópolis). Quem não achar o curso usa "Outro curso".
+  // Graduação presencial da Universidade (Higienópolis, Alphaville e Campinas), conforme mackenzie.br/graduacao
+  // (consultado em 14/11/2026). Variantes de turma (ex.: Ciências Contábeis "Para Graduados" e "Dual Study")
+  // entram no curso principal. EAD e as Faculdades (Rio, Brasília, Curitiba) ficam de fora: usam "Outro curso".
   courses: [
-    'Administração', 'Arquitetura e Urbanismo', 'Ciência da Computação', 'Ciências Biológicas', 'Ciências Contábeis',
-    'Ciências Econômicas', 'Design', 'Direito', 'Educação Física', 'Engenharia Civil', 'Engenharia de Computação',
-    'Engenharia de Materiais', 'Engenharia de Produção', 'Engenharia Elétrica', 'Engenharia Mecânica', 'Engenharia Química',
-    'Farmácia', 'Filosofia', 'Física', 'Fonoaudiologia', 'Jornalismo', 'Letras', 'Matemática', 'Medicina', 'Nutrição',
-    'Pedagogia', 'Psicologia', 'Publicidade e Propaganda', 'Química', 'Relações Internacionais', 'Sistemas de Informação',
-    'Teologia',
+    'Administração', 'Administração (Gestão de Comércio Exterior)', 'Arquitetura e Urbanismo', 'Ciência da Computação',
+    'Ciências Biológicas', 'Ciências Contábeis', 'Ciências Econômicas', 'Cinema e Audiovisual', 'Design', 'Direito',
+    'Engenharia Civil', 'Engenharia da Computação', 'Engenharia de Materiais', 'Engenharia de Produção', 'Engenharia Elétrica',
+    'Engenharia Mecânica', 'Engenharia Química', 'Farmácia', 'Fisioterapia', 'Gastronomia (Tecnólogo)', 'Jornalismo', 'Letras',
+    'Medicina', 'Nutrição', 'Pedagogia', 'Psicologia', 'Publicidade e Propaganda', 'Química', 'Sistemas de Informação', 'Teologia',
   ],
   // Códigos de demonstração. No backend, convites são individuais e têm limite de uso.
   inviteCodes: ['MACK2026', 'FUNDADORES'],
