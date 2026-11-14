@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
 import { CommentList } from '@/components/comments';
-import { Badge, Button, Card, Empty, Field, Notice, styles } from '@/components/ui';
+import { Badge, Button, Card, Empty, Field, Notice, styles, VerifyPrompt } from '@/components/ui';
 import { placeCategory, price } from '@/lib/labels';
 import { canPublish, useMe, useStore } from '@/lib/store';
 import { colors } from '@/theme';
@@ -54,7 +54,7 @@ export default function LugarScreen() {
         </View>
 
         {!canPublish(me) ? (
-          <Notice tone="warn" icon="hourglass-outline" text="Assim que sua verificação for aprovada, você poderá recomendar lugares." />
+          <VerifyPrompt text="Para recomendar lugares, confirme seu vínculo com a universidade pelo e-mail institucional." />
         ) : alreadyRecommended ? (
           <Notice icon="checkmark-circle" text="Você já recomendou este lugar." />
         ) : (

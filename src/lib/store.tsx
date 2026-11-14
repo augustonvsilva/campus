@@ -68,7 +68,7 @@ function inviteCode() {
 }
 
 export type SignInInput =
-  | { mode: 'signup'; name: string; email: string; course?: string; inviteCode: string; alternativeVerification: boolean }
+  | { mode: 'signup'; name: string; email: string; course?: string; inviteCode: string }
   | { mode: 'login'; email: string };
 
 function useCampusState() {
@@ -78,6 +78,8 @@ function useCampusState() {
   const [refreshing, setRefreshing] = useState(false);
   const stateRef = useRef(state);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Demo: código de verificação pendente (no Supabase, ele só existe no banco e no e-mail). */
+  const demoCode = useRef<{ email: string; code: string } | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
@@ -196,11 +198,14 @@ function useCampusState() {
         if (!ACTIVE_COMMUNITY.inviteCodes.includes(code) && !memberInvite) throw new Error('Convite inválido ou esgotado.');
         const id = newId();
         const first = input.name.trim().split(/\s+/)[0] ?? 'aluno';
+        // Entrou direto com o e-mail institucional (e ele não verificou outra conta): já nasce verificado.
+        const institutional = isInstitutionalEmail(email) && !Object.values(s.users).some((u) => u.institutionalEmail === email);
         const user: User = {
           id, communityId: C, name: input.name.trim(), handle: `${first.toLowerCase()}.${id.slice(0, 3)}`, email,
           course: input.course?.trim() || undefined, interests: [],
           color: avatarColors[Crypto.getRandomBytes(1)[0]! % avatarColors.length]!,
-          verification: !input.alternativeVerification && isInstitutionalEmail(email) ? 'email' : 'pending',
+          verification: institutional ? 'email' : 'pending',
+          institutionalEmail: institutional ? email : undefined,
           // Demo: quem entra com o convite da equipe fundadora vira admin (para testar a moderação).
           role: code === 'FUNDADORES' ? 'admin' : 'member',
           joinedAt: Date.now(),
@@ -263,6 +268,46 @@ function useCampusState() {
         if (SUPABASE_ENABLED) await remote.createInvite(m, invite);
         setState((x) => ({ ...x, invites: [...x.invites, invite] }));
         return invite.code;
+      },
+      /**
+       * Envia um código de 6 dígitos para o e-mail institucional informado.
+       * Na demo não há envio: o código volta em `demoCode` para ser mostrado na tela.
+       */
+      async requestInstitutionalCode(rawEmail: string): Promise<{ demoCode?: string }> {
+        const email = rawEmail.trim().toLowerCase();
+        if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Digite um e-mail válido.');
+        if (!isInstitutionalEmail(email)) {
+          throw new Error(`Use um e-mail institucional (@${ACTIVE_COMMUNITY.emailDomains.join(' ou @')}).`);
+        }
+        if (SUPABASE_ENABLED) {
+          await remote.requestInstitutionalCode(email);
+          return {};
+        }
+        const m = me();
+        if (Object.values(stateRef.current.users).some((u) => u.id !== m && u.institutionalEmail === email)) {
+          throw new Error('Esse e-mail institucional já confirmou outra conta. Se ela não é sua, fale com a equipe.');
+        }
+        const code = String(Crypto.getRandomBytes(3).reduce((n, b) => n * 256 + b, 0) % 1000000).padStart(6, '0');
+        demoCode.current = { email, code };
+        return { demoCode: code };
+      },
+      async confirmInstitutionalCode(code: string) {
+        const m = me();
+        if (!m) throw new Error('Sem sessão');
+        if (SUPABASE_ENABLED) {
+          await remote.confirmInstitutionalCode(code);
+          await load(m);
+          return;
+        }
+        const pending = demoCode.current;
+        if (!pending) throw new Error('Peça um código primeiro.');
+        if (pending.code !== code.trim()) throw new Error('Código incorreto. Confira e tente de novo.');
+        demoCode.current = null;
+        setState((s) => ({
+          ...s,
+          users: { ...s.users, [m]: { ...s.users[m]!, verification: 'email', institutionalEmail: pending.email } },
+          verificationRequests: s.verificationRequests.filter((v) => v.userId !== m),
+        }));
       },
       async requestVerification(image: LocalImage) {
         const m = me();

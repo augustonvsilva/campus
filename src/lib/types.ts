@@ -16,8 +16,8 @@ export interface Community {
 }
 
 /**
- * email = verificado por e-mail institucional; manual = aprovado pela moderação;
- * pending = verificação alternativa em análise; rejected = vínculo não comprovado.
+ * email = verificado por código enviado ao e-mail institucional; manual = aprovado pela moderação
+ * (comprovante); pending = ainda não verificado; rejected = vínculo não comprovado.
  */
 export type Verification = 'email' | 'manual' | 'pending' | 'rejected';
 export type Role = 'member' | 'moderator' | 'admin';
@@ -27,7 +27,10 @@ export interface User {
   communityId: ID;
   name: string;
   handle: string;
+  /** E-mail de login (pode ser pessoal). */
   email?: string;
+  /** E-mail institucional confirmado. Só é carregado para o próprio usuário. */
+  institutionalEmail?: string;
   course?: string;
   semester?: string;
   interests: string[];

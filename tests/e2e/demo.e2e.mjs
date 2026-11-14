@@ -41,21 +41,14 @@ await check('abre a tela de entrada', async () => {
 await check('valida convite inválido', async () => {
   await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('ERRADO');
   await page.getByPlaceholder('Como você quer aparecer').fill('Teste Fundador');
-  await page.getByPlaceholder('voce@mackenzista.com.br').fill('teste@mackenzista.com.br');
-  await page.getByRole('switch').nth(1).click();
+  await page.getByPlaceholder('seu@email.com').fill('teste@mackenzista.com.br');
+  await page.getByRole('switch').nth(0).click();
   await page.getByText('Entrar no Campus').click();
   await visible('Convite inválido ou esgotado.');
 });
 
-await check('valida e-mail não institucional', async () => {
+await check('cadastro direto com e-mail institucional (já verificado)', async () => {
   await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('FUNDADORES');
-  await page.getByPlaceholder('voce@mackenzista.com.br').fill('teste@gmail.com');
-  await page.getByText('Entrar no Campus').click();
-  await visible('Use seu e-mail institucional');
-});
-
-await check('cadastro com convite FUNDADORES', async () => {
-  await page.getByPlaceholder('voce@mackenzista.com.br').fill('teste@mackenzista.com.br');
   await page.getByText('Entrar no Campus').click();
   await visible('Pergunte, recomende, combine algo…');
   await visible('Quem vai no futsal hoje?', { exact: false });
@@ -333,19 +326,44 @@ await check('sair e entrar de novo com "Já tenho conta"', async () => {
   await visible('Pergunte, recomende, combine algo…');
 });
 
-await check('cadastro pela verificação alternativa (somente leitura)', async () => {
+await check('cadastro com e-mail pessoal fica sem publicar até verificar', async () => {
   await page.getByLabel('Abrir perfil').locator('visible=true').and(LIVE).first().click();
   await page.getByText('Sair', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('MACK2026');
-  await page.getByPlaceholder('Como você quer aparecer').fill('Sem Email');
+  await page.getByPlaceholder('Como você quer aparecer').fill('Aluna Pessoal');
+  await page.getByPlaceholder('seu@email.com').fill('aluna@gmail.com');
   await page.getByRole('switch').nth(0).click();
-  await page.getByPlaceholder('seu@email.com').fill('aluno@gmail.com');
-  await page.getByRole('switch').nth(1).click();
   await page.getByText('Entrar no Campus').click();
-  await visible('Pergunte, recomende, combine algo…');
+  await visible('Confirme que você é aluno', { exact: false });
   await page.getByRole('button', { name: 'Criar publicação, Bora? ou evento' }).locator('visible=true').and(LIVE).first().click();
-  await visible('em análise', { exact: false });
-  await shot('12-pendente');
+  await visible('Para publicar, confirme seu vínculo', { exact: false });
+  await shot('12-nao-verificado');
+});
+
+await check('verificação pelo e-mail institucional no perfil', async () => {
+  await page.goto(BASE + '/perfil');
+  await visible('Vínculo não verificado');
+  const inst = page.getByPlaceholder('voce@mackenzista.com.br').locator('visible=true').and(LIVE).first();
+  await inst.fill('aluna@gmail.com');
+  await page.getByText('Enviar código', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Use um e-mail institucional', { exact: false });
+  await inst.fill('teste@mackenzista.com.br');
+  await page.getByText('Enviar código', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('já confirmou outra conta', { exact: false });
+  await inst.fill('aluna@mackenzista.com.br');
+  await page.getByText('Enviar código', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  const hint = await page.getByText('Modo demonstração: o código é', { exact: false }).locator('visible=true').and(LIVE).first().textContent();
+  const demoCode = hint?.match(/\d{6}/)?.[0];
+  if (!demoCode) throw new Error('código da demo não apareceu');
+  const codeField = page.getByPlaceholder('000000').locator('visible=true').and(LIVE).first();
+  await codeField.fill(demoCode === '000000' ? '111111' : '000000');
+  await page.getByText('Confirmar vínculo').locator('visible=true').and(LIVE).first().click();
+  await visible('Código incorreto', { exact: false });
+  await codeField.fill(demoCode);
+  await page.getByText('Confirmar vínculo').locator('visible=true').and(LIVE).first().click();
+  await visible('Vínculo verificado');
+  await visible('Verificado por aluna@mackenzista.com.br');
+  await shot('13-verificado');
 });
 
 console.log(results.join('\n'));

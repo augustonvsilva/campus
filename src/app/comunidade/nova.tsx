@@ -2,7 +2,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
-import { Button, Chip, ChipRow, Field, Notice, styles } from '@/components/ui';
+import { Button, Chip, ChipRow, Field, Notice, styles, VerifyPrompt } from '@/components/ui';
 import { GROUP_COLORS, GROUP_KINDS } from '@/lib/labels';
 import { canPublish, useMe, useStore } from '@/lib/store';
 import type { GroupKind } from '@/lib/types';
@@ -39,7 +39,7 @@ export default function NovaComunidade() {
   if (!canPublish(me)) {
     return (
       <View style={[styles.screen, styles.content]}>
-        <Notice tone="warn" icon="hourglass-outline" text="Assim que sua verificação de vínculo for aprovada, você poderá criar comunidades." />
+        <VerifyPrompt text="Para criar comunidades, confirme seu vínculo com a universidade pelo e-mail institucional." />
       </View>
     );
   }

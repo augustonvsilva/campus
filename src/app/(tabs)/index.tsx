@@ -4,8 +4,8 @@ import { FlatList, Pressable, RefreshControl, ScrollView, Text, View } from 'rea
 
 import { PostCard } from '@/components/cards';
 import { FollowButton, openProfile } from '@/components/social';
-import { Avatar, Chip, ChipRow, Empty, styles, TabHeader } from '@/components/ui';
-import { useMe, useStore } from '@/lib/store';
+import { Avatar, Chip, ChipRow, Empty, styles, TabHeader, VerifyPrompt } from '@/components/ui';
+import { canPublish, useMe, useStore } from '@/lib/store';
 import { followingOf, suggestPeople } from '@/lib/social';
 import { useNow } from '@/lib/time';
 import { colors, radius } from '@/theme';
@@ -76,6 +76,9 @@ export default function Inicio() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={actions.refresh} tintColor={colors.accent} />}
         ListHeaderComponent={
           <View style={{ gap: 16 }}>
+            {!canPublish(me) ? (
+              <VerifyPrompt text="Confirme que você é aluno para publicar, comentar e entrar nos Bora?. Enviamos um código para o seu e-mail institucional." />
+            ) : null}
             <Pressable
               onPress={() => router.push({ pathname: '/criar', params: { tipo: 'post' } })}
               accessibilityRole="button"

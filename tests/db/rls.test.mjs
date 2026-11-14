@@ -19,7 +19,7 @@ alter table storage.objects enable row level security;
 create function storage.foldername(name text) returns text[] language sql immutable as $$
   select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
 create publication supabase_realtime;
-grant usage on schema public, auth, storage to anon, authenticated;
+grant usage on schema public, auth, storage to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated;
 grant all on storage.objects to authenticated;
 alter default privileges in schema public grant all on tables to anon, authenticated;
@@ -45,7 +45,7 @@ const rows = async (sql, params) => (await q(sql, params)).rows;
 console.log('Aplicando stubs + migrations');
 await db.exec(stub);
 for (const f of ['migrations/0001_init.sql', 'migrations/0002_moderacao_midia_convites.sql', 'migrations/0003_foto_perfil.sql',
-  'migrations/0004_conexoes_comunidades.sql', 'seed.sql']) {
+  'migrations/0004_conexoes_comunidades.sql', 'migrations/0005_email_institucional.sql', 'seed.sql']) {
   await expectOk(f, () => db.exec(readFileSync(`${root}/supabase/${f}`, 'utf8')));
 }
 
@@ -236,6 +236,61 @@ const gonePosts = await as(caio, () => rows(`select id from posts where group_id
 const goneRides = await as(caio, () => rows(`select id from rides where group_id = $1`, [atl]));
 goneGroup.length + goneEvent.length + gonePosts.length + goneRides.length === 0
   ? ok('comunidade removida leva mural, agenda e saídas junto') : bad('conteúdo de comunidade removida ainda visível');
+
+console.log('Vínculo pelo e-mail institucional (login com e-mail pessoal)');
+const asService = async (fn) => { await db.exec('set role service_role'); try { return await fn(); } finally { await db.exec('reset role'); } };
+const issue = (user, email) => asService(async () => (await rows(`select issue_institutional_code($1, $2) as code`, [user, email]))[0].code);
+const confirmCode = (user, code) => as(user, async () => (await rows(`select confirm_institutional_code($1) as s`, [code]))[0].s);
+const verificationOf = async (user) => (await rows(`select verification from profiles where id = $1`, [user]))[0].verification;
+const otherCode = (code) => (code === '000000' ? '111111' : '000000');
+
+const lia = await newUser('lia@gmail.com', { name: 'Lia', invite_code: 'FUNDADORES' });
+(await verificationOf(lia)) === 'pending' ? ok('cadastro com e-mail pessoal nasce não verificado') : bad('e-mail pessoal deveria nascer pending');
+(await rows(`select email from institutional_emails where user_id = $1`, [ana]))[0]?.email === 'ana@mackenzista.com.br'
+  ? ok('cadastro direto com e-mail institucional registra o endereço') : bad('institutional_emails da Ana');
+await as(lia, () => expectFail('aluno não gera código pelo app (só a Edge Function)',
+  () => q(`select issue_institutional_code($1, 'lia@mackenzista.com.br')`, [lia]), 'permission denied'));
+await expectFail('domínio não institucional é recusado', () => issue(lia, 'lia@outlook.com'), 'domínio não institucional');
+await expectFail('e-mail institucional de outra conta é recusado', () => issue(lia, 'ANA@mackenzista.com.br'), 'já usado');
+const code1 = await expectOk('código gerado para o e-mail institucional', () => issue(lia, 'Lia@Mackenzista.com.br'));
+/^\d{6}$/.test(code1 ?? '') ? ok('código tem 6 dígitos') : bad('formato do código', code1);
+(await rows(`select code_hash from institutional_email_codes where user_id = $1`, [lia]))[0]?.code_hash !== code1
+  ? ok('banco guarda só o hash do código') : bad('código salvo em claro');
+await as(lia, () => expectFail('aluno não lê a tabela de códigos', () => q(`select * from institutional_email_codes`), 'permission denied'));
+await expectFail('reenvio antes de 1 minuto é recusado', () => issue(lia, 'lia@mackenzista.com.br'), 'aguarde');
+(await confirmCode(lia, otherCode(code1))) === 'incorreto' ? ok('código errado é recusado') : bad('código errado aceito');
+(await rows(`select attempts from institutional_email_codes where user_id = $1`, [lia]))[0].attempts === 1
+  ? ok('tentativa errada fica registrada') : bad('tentativa errada não contada');
+(await verificationOf(lia)) === 'pending' ? ok('código errado não verifica') : bad('código errado verificou');
+await as(lia, () => expectFail('aluno não se autoverifica pelo perfil',
+  () => q(`update profiles set verification = 'email' where id = $1`, [lia]), 'permission denied'));
+(await confirmCode(lia, code1)) === 'ok' ? ok('código certo confirma') : bad('código certo recusado');
+(await verificationOf(lia)) === 'email' ? ok('conta fica verificada') : bad('conta não verificada');
+const liaInst = await as(lia, () => rows(`select email from institutional_emails`));
+liaInst.length === 1 && liaInst[0].email === 'lia@mackenzista.com.br'
+  ? ok('aluno vê só o próprio e-mail institucional (normalizado)') : bad('institutional_emails visível', JSON.stringify(liaInst));
+(await rows(`select email from auth.users where id = $1`, [lia]))[0].email === 'lia@gmail.com'
+  ? ok('login continua com o e-mail pessoal') : bad('e-mail de login mudou');
+await as(lia, () => expectOk('verificada publica', () => q(`insert into posts (community_id, author_id, body) values ('mackenzie', $1, 'oi, sou a Lia')`, [lia])));
+(await confirmCode(lia, code1)) === 'sem_codigo' ? ok('código não é reutilizável') : bad('código reutilizado');
+await expectFail('não gera código para quem já é verificado', () => issue(lia, 'lia2@mackenzista.com.br'), 'já verificado');
+
+const rui = await newUser('rui@gmail.com', { name: 'Rui', invite_code: 'FUNDADORES' });
+await expectFail('e-mail que já verificou outra conta é recusado', () => issue(rui, 'lia@mackenzista.com.br'), 'já usado');
+const ruiCode = await issue(rui, 'rui@mackenzista.com.br');
+for (let i = 0; i < 5; i++) await confirmCode(rui, otherCode(ruiCode));
+(await confirmCode(rui, ruiCode)) === 'tentativas' ? ok('após 5 erros, nem o código certo vale') : bad('limite de tentativas');
+await db.exec(`update institutional_email_codes set last_sent_at = now() - interval '2 minutes' where user_id = '${rui}'`);
+const ruiCode2 = await issue(rui, 'rui@mackenzista.com.br');
+(await rows(`select attempts from institutional_email_codes where user_id = $1`, [rui]))[0].attempts === 0
+  ? ok('novo código zera as tentativas') : bad('novo código não zerou tentativas');
+await db.exec(`update institutional_email_codes set expires_at = now() - interval '1 second' where user_id = '${rui}'`);
+(await confirmCode(rui, ruiCode2)) === 'expirado' ? ok('código expirado é recusado') : bad('código expirado aceito');
+await db.exec(`update institutional_email_codes set last_sent_at = now() - interval '2 minutes', sends_in_window = 5 where user_id = '${rui}'`);
+await expectFail('limite diário de envios', () => issue(rui, 'rui@mackenzista.com.br'), 'limite diário');
+const outraLia = await newUser('lia@mackenzista.com.br', { name: 'Outra Lia', invite_code: 'FUNDADORES' });
+(await verificationOf(outraLia)) === 'pending'
+  ? ok('cadastro direto com e-mail institucional já usado não verifica') : bad('e-mail institucional verificou duas contas');
 
 console.log(failures ? `\n${failures} FALHA(S)` : '\nTodos os cenários passaram.');
 process.exit(failures ? 1 : 0);

@@ -3,13 +3,14 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Chip, ChipRow, Field, Notice, styles, ToggleRow } from '@/components/ui';
-import { isInstitutionalEmail } from '@/lib/community';
 import { useStore } from '@/lib/store';
 import { colors } from '@/theme';
 
 type Mode = 'signup' | 'login';
 
-// Entrada por convite + validação de vínculo (e-mail institucional ou verificação alternativa).
+// Entrada por convite. O login pode usar qualquer e-mail (o pessoal é recomendado, pois continua
+// valendo depois da formatura). O vínculo com a universidade é confirmado depois, no perfil,
+// com um código enviado ao e-mail institucional.
 // No modo Supabase, o acesso é confirmado com um código de 6 dígitos enviado por e-mail.
 export default function Entrar() {
   const { actions, community, backend } = useStore();
@@ -21,7 +22,6 @@ export default function Entrar() {
   const [email, setEmail] = useState('');
   const [course, setCourse] = useState('');
   const [code, setCode] = useState('');
-  const [noInstitutional, setNoInstitutional] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -43,9 +43,6 @@ export default function Entrar() {
     if (mode === 'login') return null;
     if (!invite.trim()) return 'Digite o código de convite que você recebeu.';
     if (name.trim().length < 2) return 'Conta pra gente seu nome.';
-    if (!noInstitutional && !isInstitutionalEmail(email)) {
-      return `Use seu e-mail institucional (@${community.emailDomains[0]}) ou ative a verificação alternativa.`;
-    }
     if (!accepted) return 'Para entrar, aceite as regras da comunidade.';
     return null;
   };
@@ -57,7 +54,7 @@ export default function Entrar() {
       const needsCode = await actions.startSignIn(
         mode === 'login'
           ? { mode, email }
-          : { mode, email, name, course, inviteCode: invite, alternativeVerification: noInstitutional },
+          : { mode, email, name, course, inviteCode: invite },
       );
       if (needsCode) setStep('code');
     });
@@ -102,10 +99,13 @@ export default function Entrar() {
                 </>
               ) : null}
               <Field
-                label={mode === 'signup' && !noInstitutional ? 'E-mail institucional' : 'E-mail'}
+                label="E-mail"
+                hint={mode === 'signup'
+                  ? `Pode ser o pessoal: ele continua valendo depois da formatura. Para confirmar que você é aluno, depois enviamos um código ao seu @${community.emailDomains[0]}.`
+                  : undefined}
                 value={email}
                 onChangeText={setEmail}
-                placeholder={mode === 'signup' && !noInstitutional ? `voce@${community.emailDomains[0]}` : 'seu@email.com'}
+                placeholder="seu@email.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -113,12 +113,6 @@ export default function Entrar() {
               {mode === 'signup' ? (
                 <>
                   <Field label="Curso (opcional)" value={course} onChangeText={setCourse} placeholder="Ex.: Engenharia Civil" />
-                  <ToggleRow
-                    label="Não tenho acesso ao e-mail institucional"
-                    hint="Você entra, mas sua conta fica em análise até a equipe confirmar seu vínculo — dá para enviar um comprovante de matrícula pelo perfil. Até lá, você só pode ver o conteúdo."
-                    value={noInstitutional}
-                    onValueChange={setNoInstitutional}
-                  />
                   <ToggleRow
                     label="Li e aceito as regras da comunidade"
                     hint="Respeito, nada de assédio, discriminação ou exposição de terceiros. Conteúdo pode ser denunciado e removido."

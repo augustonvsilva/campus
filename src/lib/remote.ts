@@ -36,6 +36,12 @@ export function friendlyError(message: string): string {
   if (m.includes('pelo menos um admin')) return 'A comunidade precisa de pelo menos um admin. Promova alguém antes de sair.';
   if (m.includes('groups_community_id_name_key') || m.includes('duplicate key') && m.includes('groups')) return 'Já existe uma comunidade com esse nome.';
   if (m.includes('row-level security') || m.includes('permission denied') || m.includes('sem permissão')) return 'Você não tem permissão para fazer isso.';
+  if (m.includes('domínio não institucional')) return `Use um e-mail institucional (@${ACTIVE_COMMUNITY.emailDomains.join(' ou @')}).`;
+  if (m.includes('e-mail institucional já usado')) return 'Esse e-mail institucional já confirmou outra conta. Se ela não é sua, fale com a equipe.';
+  if (m.includes('aguarde para reenviar')) return 'Espere 1 minuto para pedir um novo código.';
+  if (m.includes('limite diário de códigos')) return 'Você pediu muitos códigos hoje. Tente de novo amanhã.';
+  if (m.includes('vínculo já verificado')) return 'Seu vínculo já está verificado.';
+  if (m.includes('falha ao enviar e-mail')) return 'Não conseguimos enviar o e-mail agora. Tente de novo em instantes.';
   if (m.includes('network') || m.includes('fetch')) return 'Sem conexão. Verifique sua internet.';
   return message;
 }
@@ -110,7 +116,7 @@ export interface Snapshot {
 export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
   const db = sb();
   const now = Date.now();
-  const [profiles, posts, events, boras, places, blocks, notify, reports, verifs, invites, follows, groups, rides] = await Promise.all([
+  const [profiles, posts, events, boras, places, blocks, notify, reports, verifs, invites, follows, groups, rides, institutional] = await Promise.all([
     db.from('profiles').select('*'),
     db.from('posts')
       .select('*, poll_options(id,label,position), poll_votes(option_id,user_id), post_likes(user_id), comments(id,author_id,body,created_at)')
@@ -127,8 +133,9 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
     db.from('follows').select('follower_id,followee_id'),
     db.from('groups').select('*, group_members(user_id,role)').order('name'),
     db.from('rides').select('*, ride_reservations(user_id)').gte('departs_at', iso(now - DAY)).order('departs_at').limit(200),
+    db.from('institutional_emails').select('email').eq('user_id', userId).maybeSingle(),
   ]);
-  [profiles, posts, events, boras, places, blocks, notify, reports, verifs, invites, follows, groups, rides].forEach(must);
+  [profiles, posts, events, boras, places, blocks, notify, reports, verifs, invites, follows, groups, rides, institutional].forEach(must);
 
   const following: Record<ID, ID[]> = {};
   for (const f of (follows.data ?? []) as { follower_id: string; followee_id: string }[]) {
@@ -149,6 +156,7 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
       verification: p.verification, role: p.role, joinedAt: Date.parse(p.created_at),
     };
     if (p.id === userId) {
+      users[p.id]!.institutionalEmail = (institutional.data as { email: string } | null)?.email;
       settings = { ...settings, profileVisible: p.profile_visible, showBoraParticipation: p.show_bora_participation };
     }
   }
@@ -235,6 +243,34 @@ export async function verifyCode(email: string, token: string) {
   const { data, error } = await sb().auth.verifyOtp({ email: email.trim().toLowerCase(), token: token.trim(), type: 'email' });
   if (error) throw new Error(friendlyError(error.message));
   return data.session;
+}
+
+// ───────────────────────── Vínculo pelo e-mail institucional ─────────────────────────
+/** Pede o envio do código para o e-mail institucional (Edge Function `verificar-vinculo`). */
+export async function requestInstitutionalCode(email: string) {
+  const { error } = await sb().functions.invoke('verificar-vinculo', { body: { email: email.trim().toLowerCase() } });
+  if (!error) return;
+  // Em erro HTTP, a mensagem da função vem no corpo da resposta.
+  let message = error.message;
+  const context = (error as { context?: unknown }).context;
+  if (context instanceof Response) {
+    message = ((await context.json().catch(() => null)) as { error?: string } | null)?.error ?? message;
+  }
+  throw new Error(friendlyError(message));
+}
+
+const CONFIRM_MESSAGES: Record<string, string> = {
+  incorreto: 'Código incorreto. Confira e tente de novo.',
+  expirado: 'Esse código expirou. Peça um novo.',
+  tentativas: 'Muitas tentativas erradas. Peça um novo código.',
+  sem_codigo: 'Peça um código primeiro.',
+  em_uso: 'Esse e-mail institucional acabou de confirmar outra conta. Se ela não é sua, fale com a equipe.',
+};
+
+export async function confirmInstitutionalCode(code: string) {
+  const res = must(await sb().rpc('confirm_institutional_code', { p_code: code.trim() }));
+  const status = res.data as string;
+  if (status !== 'ok') throw new Error(CONFIRM_MESSAGES[status] ?? 'Não foi possível confirmar o código.');
 }
 
 export async function signOut() {

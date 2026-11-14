@@ -58,7 +58,64 @@ function AvatarEditor() {
   );
 }
 
-function VerificationSection() {
+/** Confirma o vínculo com um código enviado ao e-mail institucional. */
+function InstitutionalEmailVerification() {
+  const { actions, community, backend } = useStore();
+  const { busy, error, run } = useAsync();
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [demoCode, setDemoCode] = useState<string | undefined>();
+  const domains = community.emailDomains.map((d) => '@' + d).join(' ou ');
+
+  const send = () => run(async () => {
+    const res = await actions.requestInstitutionalCode(email);
+    setSentTo(email.trim().toLowerCase());
+    setDemoCode(res.demoCode);
+    setCode('');
+  });
+  const confirm = () => run(async () => {
+    if (!/^\d{6}$/.test(code.trim())) throw new Error('O código tem 6 números.');
+    await actions.confirmInstitutionalCode(code);
+  });
+
+  return (
+    <>
+      <Text style={styles.muted}>
+        Para publicar, confirme que você é aluno: enviamos um código para o seu e-mail institucional ({domains}).
+        Seu login continua sendo o e-mail que você já usa.
+      </Text>
+      {sentTo ? (
+        <>
+          <Notice icon="mail-outline" text={`Enviamos um código de 6 números para ${sentTo}. Ele vale por 15 minutos.`} />
+          {backend === 'demo' && demoCode ? <Notice icon="flask-outline" text={`Modo demonstração: o código é ${demoCode}.`} /> : null}
+          <Field label="Código" value={code} onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
+            keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" placeholder="000000" />
+          {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
+          <Button label={busy ? 'Confirmando…' : 'Confirmar vínculo'} icon="shield-checkmark" compact disabled={busy} onPress={confirm} />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button label="Reenviar código" variant="ghost" compact disabled={busy} onPress={send} style={{ flex: 1 }} />
+            <Button label="Trocar e-mail" variant="ghost" compact disabled={busy} style={{ flex: 1 }}
+              onPress={() => { setSentTo(null); setCode(''); }} />
+          </View>
+        </>
+      ) : (
+        <>
+          <Field label="E-mail institucional" value={email} onChangeText={setEmail} placeholder={`voce@${community.emailDomains[0]}`}
+            keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+          {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
+          <Button label={busy ? 'Enviando…' : 'Enviar código'} icon="mail-outline" compact disabled={busy} onPress={send} />
+        </>
+      )}
+      <Text style={styles.hint}>
+        Usamos o e-mail institucional só para confirmar o vínculo. Ele não aparece no seu perfil e não recebe nada além deste código.
+      </Text>
+    </>
+  );
+}
+
+/** Alternativa para quem não tem acesso ao e-mail institucional: comprovante analisado pela moderação. */
+function EvidenceVerification() {
   const { actions, verificationRequests } = useStore();
   const me = useMe();
   const { busy, error, run } = useAsync();
@@ -71,23 +128,37 @@ function VerificationSection() {
   });
 
   return (
+    <>
+      <Text style={styles.muted}>
+        Envie uma foto do comprovante de matrícula ou da carteirinha (cubra dados que não forem necessários).
+        A moderação analisa e libera sua conta.
+      </Text>
+      {sent && me.verification === 'pending' ? (
+        <Notice icon="checkmark-circle" text="Comprovante enviado. Avisaremos quando for analisado." />
+      ) : null}
+      {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
+      <Button label={busy ? 'Enviando…' : sent ? 'Enviar outro comprovante' : 'Enviar comprovante'} icon="cloud-upload-outline"
+        compact variant="secondary" disabled={busy} onPress={pick} />
+      <Text style={styles.hint}>O comprovante só é visto pela moderação e serve apenas para a verificação.</Text>
+    </>
+  );
+}
+
+function VerificationSection() {
+  const me = useMe();
+  const [method, setMethod] = useState<'email' | 'comprovante'>('email');
+
+  return (
     <Section title="Verificação de vínculo">
       <Card>
         {me.verification === 'rejected' ? (
-          <Notice tone="warn" icon="close-circle" text="Não conseguimos confirmar seu vínculo com a universidade. Envie um novo comprovante ou fale com a equipe." />
-        ) : (
-          <Text style={styles.muted}>
-            Como você entrou sem e-mail institucional, a moderação precisa confirmar seu vínculo antes de você publicar.
-            Envie uma foto do comprovante de matrícula ou da carteirinha (cubra dados que não forem necessários).
-          </Text>
-        )}
-        {sent && me.verification === 'pending' ? (
-          <Notice icon="checkmark-circle" text="Comprovante enviado. Avisaremos quando for analisado." />
+          <Notice tone="warn" icon="close-circle" text="Não conseguimos confirmar seu vínculo pelo comprovante. Confirme pelo e-mail institucional ou envie um novo comprovante." />
         ) : null}
-        {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
-        <Button label={busy ? 'Enviando…' : sent ? 'Enviar outro comprovante' : 'Enviar comprovante'} icon="cloud-upload-outline"
-          compact disabled={busy} onPress={pick} />
-        <Text style={styles.hint}>O comprovante só é visto pela moderação e serve apenas para a verificação.</Text>
+        <ChipRow>
+          <Chip label="E-mail institucional" icon="mail-outline" active={method === 'email'} onPress={() => setMethod('email')} />
+          <Chip label="Não tenho acesso" icon="document-text-outline" active={method === 'comprovante'} onPress={() => setMethod('comprovante')} />
+        </ChipRow>
+        {method === 'email' ? <InstitutionalEmailVerification /> : <EvidenceVerification />}
       </Card>
     </Section>
   );
@@ -126,8 +197,9 @@ function InviteSection() {
 }
 
 export default function Perfil() {
-  const { actions, settings, blocked, users, posts, boras, community, backend, following, groups } = useStore();
+  const { actions, settings, blocked, users, posts, boras, community, backend, following, groups, verificationRequests } = useStore();
   const me = useMe();
+  const evidenceSent = verificationRequests.some((v) => v.userId === me.id && v.evidence);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(me.name);
   const [course, setCourse] = useState(me.course ?? '');
@@ -162,7 +234,10 @@ export default function Perfil() {
           ? <Badge label="Vínculo verificado" icon="shield-checkmark" tone="accent" style={{ alignSelf: 'center' }} />
           : me.verification === 'rejected'
             ? <Badge label="Vínculo não comprovado" icon="close-circle" tone="warn" style={{ alignSelf: 'center' }} />
-            : <Badge label="Verificação em análise" icon="hourglass-outline" tone="warn" style={{ alignSelf: 'center' }} />}
+            : evidenceSent
+              ? <Badge label="Verificação em análise" icon="hourglass-outline" tone="warn" style={{ alignSelf: 'center' }} />
+              : <Badge label="Vínculo não verificado" icon="alert-circle-outline" tone="warn" style={{ alignSelf: 'center' }} />}
+        {me.institutionalEmail ? <Text style={styles.hint}>Verificado por {me.institutionalEmail}</Text> : null}
         {me.interests.length ? (
           <ChipRow>{me.interests.map((i) => <Chip key={i} label={i} />)}</ChipRow>
         ) : null}

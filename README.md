@@ -12,7 +12,7 @@ npm start          # QR code para abrir no celular com o Expo Go
 
 Sem `.env.local`, o app roda no **modo demonstração**: os dados são fictícios e ficam só no aparelho.
 - Convites: `MACK2026` (membro) ou `FUNDADORES` (admin, com acesso ao painel de moderação).
-- E-mails institucionais aceitos: `@mackenzista.com.br` e `@mackenzie.br`.
+- Cadastro com qualquer e-mail (o pessoal é recomendado). Para publicar, o aluno confirma o vínculo no perfil com um código enviado ao e-mail institucional (`@mackenzista.com.br` ou `@mackenzie.br`). Na demo, o código aparece na tela.
 
 Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por código enviado por e-mail, dados compartilhados entre todos e atualização em tempo real.
 
@@ -22,32 +22,39 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
 |---|---|
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
-| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 100 cenários de segurança: convite, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
+| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 128 cenários de segurança: convite, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
 | `npm run test:e2e` | 25 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
 
 ## Colocar o Supabase no ar
 
 1. Crie um projeto em [supabase.com](https://supabase.com). Sugestão: região **São Paulo (sa-east-1)**, pensando na LGPD.
 2. Aplique o banco, por um destes caminhos:
-   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
+   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
    - **CLI:** `npx supabase link --project-ref <ref>` e depois `npx supabase db push`.
 3. Em **Authentication → Email Templates → Magic Link**, inclua `{{ .Token }}` no texto, para o e-mail trazer o código de 6 dígitos. Exemplo: `Seu código do Campus: {{ .Token }}`.
 4. Em **Authentication → SMTP**, configure um provedor próprio (Resend, SES…). O SMTP padrão do Supabase só envia poucos e-mails por hora.
-5. Copie `.env.example` para `.env.local` e preencha com URL e *publishable key* (Project Settings → API). **Nunca** use a `service_role` no app.
-6. Crie sua conta pelo app com o convite `FUNDADORES` (criado pela migration, com 50 usos). Depois torne-se admin no SQL Editor:
+5. Publique a Edge Function que envia o código de vínculo ao e-mail institucional:
+   ```bash
+   npx supabase secrets set RESEND_API_KEY=re_... EMAIL_FROM="Campus <verificacao@seudominio.com.br>"
+   npx supabase functions deploy verificar-vinculo
+   ```
+   O remetente precisa de domínio verificado no Resend (SPF/DKIM). Sem isso, o servidor de e-mail da universidade tende a mandar o código para o spam ou recusá-lo.
+6. Copie `.env.example` para `.env.local` e preencha com URL e *publishable key* (Project Settings → API). **Nunca** use a `service_role` no app.
+7. Crie sua conta pelo app com o convite `FUNDADORES` (criado pela migration, com 50 usos). Depois torne-se admin no SQL Editor:
    ```sql
    update profiles set role = 'admin'
-   where id = (select id from auth.users where email = 'voce@mackenzista.com.br');
+   where id = (select id from auth.users where email = 'voce@seuemail.com');
    ```
-7. Antes do lançamento, troque o convite `FUNDADORES` por códigos da equipe e dos embaixadores:
+8. Antes do lançamento, troque o convite `FUNDADORES` por códigos da equipe e dos embaixadores:
    `insert into invites (code, community_id, max_uses) values ('EMBAIXADOR-ANA', 'mackenzie', 30);`
 
 ## O que já existe (v0.2)
 
 | Área | Status |
 |---|---|
-| Convite + e-mail institucional + código por e-mail | ✅ |
-| Verificação alternativa: comprovante enviado pelo perfil, aprovado na moderação | ✅ |
+| Convite + login por código enviado ao e-mail (pessoal ou institucional) | ✅ |
+| Vínculo confirmado por código no e-mail institucional (um endereço por conta, hash no banco, limite de tentativas e reenvios) | ✅ |
+| Sem acesso ao e-mail institucional: comprovante enviado pelo perfil, aprovado na moderação | ✅ |
 | Convites individuais: 3 ativos por pessoa, 5 usos cada, com rastreio de quem convidou | ✅ |
 | Foto de perfil (recorte quadrado 256 px, visível só para a própria comunidade) | ✅ |
 | **Conexões:** seguir, "conectados" (mútuo), perfil público com rolês em comum, seguidores/seguindo | ✅ |
@@ -81,6 +88,7 @@ src/
     seed.ts           dados fictícios do modo demo
 supabase/
   migrations/         schema, RLS, storage, triggers, RPCs de moderação
+  functions/          Edge Functions (Deno): verificar-vinculo envia o código ao e-mail institucional
   seed.sql            lugares e eventos de exemplo
 tests/
   db/                 cenários de RLS (PGlite)

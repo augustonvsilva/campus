@@ -3,7 +3,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
-import { Button, Chip, ChipRow, Field, Notice, styles, ToggleRow } from '@/components/ui';
+import { Button, Chip, ChipRow, Field, Notice, styles, ToggleRow, VerifyPrompt } from '@/components/ui';
 import { EVENT_CATEGORIES } from '@/lib/labels';
 import { canPublish, LocalImage, useMe, useStore } from '@/lib/store';
 import { at, HOUR, MIN, parseDateTime, useNow, when, whenInline } from '@/lib/time';
@@ -32,11 +32,7 @@ export default function Criar() {
         </ChipRow>
 
         {!canPublish(me) ? (
-          <Notice
-            tone="warn"
-            icon="hourglass-outline"
-            text="Sua verificação de vínculo com a universidade está em análise. Assim que for aprovada, você poderá publicar."
-          />
+          <VerifyPrompt text="Para publicar, confirme seu vínculo com a universidade. Leva 1 minuto: enviamos um código para o seu e-mail institucional." />
         ) : kind === 'post' ? (
           <PostForm groupId={group?.id} />
         ) : kind === 'bora' ? (

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import {
   Image, Pressable, StyleProp, StyleSheet, Switch, Text, TextInput, TextInputProps, View, ViewStyle,
@@ -7,7 +7,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { User } from '@/lib/types';
-import { useStore } from '@/lib/store';
+import { useMe, useStore } from '@/lib/store';
 import { colors, radius } from '@/theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -187,6 +187,20 @@ export function Notice({ icon = 'information-circle', text, tone = 'muted' }: { 
     <View style={[styles.notice, { borderColor: tone === 'warn' ? colors.warn : colors.border }]}>
       <Ionicons name={icon} size={18} color={color} />
       <Text style={[styles.hint, { flex: 1, color: tone === 'warn' ? colors.text : colors.muted }]}>{text}</Text>
+    </View>
+  );
+}
+
+/** Aviso para quem ainda não verificou o vínculo, com atalho para a verificação no perfil. */
+export function VerifyPrompt({ text }: { text: string }) {
+  const { verificationRequests } = useStore();
+  const me = useMe();
+  const inReview = me.verification === 'pending' && verificationRequests.some((v) => v.userId === me.id && v.evidence);
+  return (
+    <View style={{ gap: 10 }}>
+      <Notice tone="warn" icon={inReview ? 'hourglass-outline' : 'shield-outline'}
+        text={inReview ? 'Seu comprovante está em análise. Se preferir não esperar, confirme pelo e-mail institucional.' : text} />
+      <Button label="Verificar vínculo" icon="shield-checkmark" compact onPress={() => router.push('/perfil')} />
     </View>
   );
 }
