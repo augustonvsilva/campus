@@ -10,6 +10,7 @@ import { AppState } from 'react-native';
 
 import { avatarColors } from '@/theme';
 import { ACTIVE_COMMUNITY, isInstitutionalEmail } from './community';
+import { handleProblem, normalizeHandle } from './handle';
 import type { PreparedImage } from './images';
 import * as remote from './remote';
 import { seedData } from './seed';
@@ -68,7 +69,7 @@ function inviteCode() {
 }
 
 export type SignInInput =
-  | { mode: 'signup'; name: string; email: string; course?: string; inviteCode: string }
+  | { mode: 'signup'; name: string; handle: string; email: string; course: string; semester: string; inviteCode: string }
   | { mode: 'login'; email: string };
 
 function useCampusState() {
@@ -173,16 +174,31 @@ function useCampusState() {
       local((s, m) => ({ ...s, events: s.events.map((e) => (e.id === id ? fn(e, m) : e)) }));
     const mkComment = (authorId: ID, text: string): Comment => ({ id: newId(), authorId, text: text.trim(), createdAt: Date.now() });
 
+    /** Valida formato e disponibilidade do nick; devolve normalizado ou lança com a mensagem para o usuário. */
+    const checkHandle = async (raw: string): Promise<string> => {
+      const problem = handleProblem(raw);
+      if (problem) throw new Error(problem);
+      const handle = normalizeHandle(raw);
+      const m = me();
+      const free = SUPABASE_ENABLED
+        ? await remote.handleAvailable(handle)
+        : !Object.values(stateRef.current.users).some((u) => u.id !== m && u.handle === handle);
+      if (!free) throw new Error('Esse nick já está em uso. Escolha outro.');
+      return handle;
+    };
+
     return {
       clearError: () => setError(null),
+      checkHandle,
       refresh,
 
       // ── Conta ──
       /** Retorna true quando é preciso digitar o código enviado por e-mail (modo Supabase). */
       async startSignIn(input: SignInInput): Promise<boolean> {
+        const handle = input.mode === 'signup' ? await checkHandle(input.handle) : '';
         if (SUPABASE_ENABLED) {
           await remote.requestCode(input.email, input.mode === 'signup'
-            ? { name: input.name, course: input.course, inviteCode: input.inviteCode } : undefined);
+            ? { name: input.name, handle, course: input.course, semester: input.semester, inviteCode: input.inviteCode } : undefined);
           return true;
         }
         const s = stateRef.current;
@@ -197,12 +213,11 @@ function useCampusState() {
         const memberInvite = s.invites.find((i) => i.code === code && i.uses < i.maxUses);
         if (!ACTIVE_COMMUNITY.inviteCodes.includes(code) && !memberInvite) throw new Error('Convite inválido ou esgotado.');
         const id = newId();
-        const first = input.name.trim().split(/\s+/)[0] ?? 'aluno';
         // Entrou direto com o e-mail institucional (e ele não verificou outra conta): já nasce verificado.
         const institutional = isInstitutionalEmail(email) && !Object.values(s.users).some((u) => u.institutionalEmail === email);
         const user: User = {
-          id, communityId: C, name: input.name.trim(), handle: `${first.toLowerCase()}.${id.slice(0, 3)}`, email,
-          course: input.course?.trim() || undefined, interests: [],
+          id, communityId: C, name: input.name.trim(), handle, email,
+          course: input.course.trim(), semester: input.semester, interests: [],
           color: avatarColors[Crypto.getRandomBytes(1)[0]! % avatarColors.length]!,
           verification: institutional ? 'email' : 'pending',
           institutionalEmail: institutional ? email : undefined,
@@ -229,7 +244,7 @@ function useCampusState() {
       resetDemo() {
         if (!SUPABASE_ENABLED) setState(demoState());
       },
-      updateProfile(patch: Partial<Pick<User, 'name' | 'course' | 'semester' | 'interests'>>) {
+      updateProfile(patch: Partial<Pick<User, 'name' | 'handle' | 'course' | 'semester' | 'interests'>>) {
         local((s, m) => ({ ...s, users: { ...s.users, [m]: { ...s.users[m]!, ...patch } } }));
         sync((m) => remote.updateProfile(m, patch));
       },

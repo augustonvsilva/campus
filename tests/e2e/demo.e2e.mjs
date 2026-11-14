@@ -38,11 +38,36 @@ await check('abre a tela de entrada', async () => {
   await shot('01-entrar');
 });
 
-await check('valida convite inválido', async () => {
+const pickSemester = (s) => page.getByText(s, { exact: true }).locator('visible=true').and(LIVE).first().click();
+
+await check('cadastro exige nick, curso e semestre', async () => {
   await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('ERRADO');
   await page.getByPlaceholder('Como você quer aparecer').fill('Teste Fundador');
   await page.getByPlaceholder('seu@email.com').fill('teste@mackenzista.com.br');
   await page.getByRole('switch').nth(0).click();
+  await page.getByText('Entrar no Campus').click();
+  await visible('O nick precisa ter pelo menos 3 caracteres.');
+  await page.getByPlaceholder('ex.: ana.ribeiro').fill('@Teste Fundador');
+  await visible('Use só letras sem acento', { exact: false });
+  await page.getByPlaceholder('ex.: ana.ribeiro').fill('teste.fundador');
+  await visible('Você vai aparecer como @teste.fundador', { exact: false });
+  await page.getByText('Entrar no Campus').click();
+  await visible('Informe seu curso.');
+  await page.getByPlaceholder('Ex.: Engenharia Civil').fill('Direito');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Escolha seu semestre.');
+  await pickSemester('3º');
+  await shot('01b-cadastro-preenchido');
+});
+
+await check('valida nick já usado', async () => {
+  await page.getByPlaceholder('ex.: ana.ribeiro').fill('ana.an');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Esse nick já está em uso. Escolha outro.');
+  await page.getByPlaceholder('ex.: ana.ribeiro').fill('teste.fundador');
+});
+
+await check('valida convite inválido', async () => {
   await page.getByText('Entrar no Campus').click();
   await visible('Convite inválido ou esgotado.');
 });
@@ -331,7 +356,10 @@ await check('cadastro com e-mail pessoal fica sem publicar até verificar', asyn
   await page.getByText('Sair', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('MACK2026');
   await page.getByPlaceholder('Como você quer aparecer').fill('Aluna Pessoal');
+  await page.getByPlaceholder('ex.: ana.ribeiro').fill('aluna.pessoal');
   await page.getByPlaceholder('seu@email.com').fill('aluna@gmail.com');
+  await page.getByPlaceholder('Ex.: Engenharia Civil').fill('Psicologia');
+  await pickSemester('1º');
   await page.getByRole('switch').nth(0).click();
   await page.getByText('Entrar no Campus').click();
   await visible('Confirme que você é aluno', { exact: false });
@@ -363,6 +391,7 @@ await check('verificação pelo e-mail institucional no perfil', async () => {
   await page.getByText('Confirmar vínculo').locator('visible=true').and(LIVE).first().click();
   await visible('Vínculo verificado');
   await visible('Verificado por aluna@mackenzista.com.br');
+  await visible('@aluna.pessoal · Mackenzie · Psicologia (1º sem.)', { exact: false });
   await shot('13-verificado');
 });
 

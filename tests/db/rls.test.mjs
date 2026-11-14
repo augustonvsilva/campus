@@ -48,10 +48,35 @@ for (const f of ['migrations/0001_init.sql', 'migrations/0002_moderacao_midia_co
   'migrations/0004_conexoes_comunidades.sql', 'migrations/0005_email_institucional.sql', 'seed.sql']) {
   await expectOk(f, () => db.exec(readFileSync(`${root}/supabase/${f}`, 'utf8')));
 }
+const rawUser = async (email, meta) =>
+  (await rows(`insert into auth.users (email, raw_user_meta_data) values ($1, $2) returning id`, [email, meta]))[0].id;
+// Conta criada antes do nick obrigatório: a 0006 precisa gerar um nick para ela.
+const legado = await rawUser('legado@gmail.com', { name: 'João Legado', invite_code: 'FUNDADORES' });
+await expectOk('migrations/0006_nick_curso_semestre.sql', () => db.exec(readFileSync(`${root}/supabase/migrations/0006_nick_curso_semestre.sql`, 'utf8')));
+const legadoHandle = (await rows(`select handle from profiles where id = $1`, [legado]))[0].handle;
+/^joao\.[0-9a-f]{4}$/.test(legadoHandle) ? ok(`conta antiga recebe nick gerado (${legadoHandle})`) : bad('nick da conta antiga', legadoHandle);
 
 console.log('Cadastro por convite');
-const newUser = async (email, meta) =>
-  (await rows(`insert into auth.users (email, raw_user_meta_data) values ($1, $2) returning id`, [email, meta]))[0].id;
+// Por padrão, cada usuário de teste ganha nick (derivado do e-mail), curso e semestre.
+const newUser = (email, meta) => rawUser(email, {
+  handle: email.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20), course: 'Direito', semester: '1º', ...meta,
+});
+console.log('Nick, curso e semestre');
+const nickOk = (h) => rows(`select handle_available($1) as ok`, [h]).then((r) => r[0].ok);
+await db.exec('set role anon');
+(await nickOk('nova.pessoa')) ? ok('visitante consulta nick livre') : bad('nick livre aparece ocupado');
+(await nickOk(legadoHandle.toUpperCase())) ? bad('nick ocupado aparece livre (maiúsculas)') : ok('nick ocupado, sem diferenciar maiúsculas');
+(await nickOk('admin')) ? bad('nick reservado aparece livre') : ok('nick reservado não está disponível');
+(await nickOk('a b')) ? bad('nick com espaço aparece livre') : ok('nick com formato inválido não está disponível');
+await db.exec('reset role');
+await expectFail('cadastro com nick já usado', () => newUser('dup@gmail.com', { name: 'Dup', invite_code: 'FUNDADORES', handle: legadoHandle }), 'nick indisponível');
+await expectFail('cadastro com nick em maiúsculas já usado', () => newUser('dup@gmail.com', { name: 'Dup', invite_code: 'FUNDADORES', handle: legadoHandle.toUpperCase() }), 'nick indisponível');
+await expectFail('cadastro com nick inválido', () => newUser('dup@gmail.com', { name: 'Dup', invite_code: 'FUNDADORES', handle: 'x' }), 'nick inválido');
+await expectFail('cadastro sem nick', () => newUser('dup@gmail.com', { name: 'Dup', invite_code: 'FUNDADORES', handle: undefined }), 'nick inválido');
+await expectFail('cadastro sem curso', () => newUser('dup@gmail.com', { name: 'Dup', invite_code: 'FUNDADORES', course: ' ' }), 'curso obrigatório');
+await expectFail('cadastro sem semestre', () => newUser('dup@gmail.com', { name: 'Dup', invite_code: 'FUNDADORES', semester: undefined }), 'semestre obrigatório');
+const usesBefore = (await rows(`select uses from invites where code = 'FUNDADORES'`))[0].uses;
+usesBefore === 1 ? ok('cadastro recusado não gasta convite') : bad('convite gasto por cadastro recusado', usesBefore);
 const ana = await expectOk('convite válido + e-mail institucional', () => newUser('ana@mackenzista.com.br', { name: 'Ana', invite_code: 'fundadores' }));
 const gui = await expectOk('convite válido + gmail', () => newUser('gui@gmail.com', { name: 'Gui', invite_code: 'FUNDADORES' }));
 const caio = await expectOk('terceiro usuário', () => newUser('caio@mackenzie.br', { name: 'Caio', invite_code: 'FUNDADORES' }));
@@ -288,6 +313,9 @@ await db.exec(`update institutional_email_codes set expires_at = now() - interva
 (await confirmCode(rui, ruiCode2)) === 'expirado' ? ok('código expirado é recusado') : bad('código expirado aceito');
 await db.exec(`update institutional_email_codes set last_sent_at = now() - interval '2 minutes', sends_in_window = 5 where user_id = '${rui}'`);
 await expectFail('limite diário de envios', () => issue(rui, 'rui@mackenzista.com.br'), 'limite diário');
+await as(lia, () => expectOk('trocar o próprio nick', () => q(`update profiles set handle = 'lia.nova' where id = $1`, [lia])));
+await as(lia, () => expectFail('não pega nick de outra pessoa', () => q(`update profiles set handle = $2 where id = $1`, [lia, legadoHandle]), 'duplicate key'));
+await as(lia, () => expectFail('não troca para nick reservado ou inválido', () => q(`update profiles set handle = 'Admin' where id = $1`, [lia]), 'handle_format'));
 const outraLia = await newUser('lia@mackenzista.com.br', { name: 'Outra Lia', invite_code: 'FUNDADORES' });
 (await verificationOf(outraLia)) === 'pending'
   ? ok('cadastro direto com e-mail institucional já usado não verifica') : bad('e-mail institucional verificou duas contas');

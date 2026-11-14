@@ -22,14 +22,14 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
 |---|---|
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
-| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 128 cenários de segurança: convite, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
-| `npm run test:e2e` | 25 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
+| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 144 cenários de segurança: convite, nick único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
+| `npm run test:e2e` | 27 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
 
 ## Colocar o Supabase no ar
 
 1. Crie um projeto em [supabase.com](https://supabase.com). Sugestão: região **São Paulo (sa-east-1)**, pensando na LGPD.
 2. Aplique o banco, por um destes caminhos:
-   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
+   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
    - **CLI:** `npx supabase link --project-ref <ref>` e depois `npx supabase db push`.
 3. Em **Authentication → Email Templates → Magic Link**, inclua `{{ .Token }}` no texto, para o e-mail trazer o código de 6 dígitos. Exemplo: `Seu código do Campus: {{ .Token }}`.
 4. Em **Authentication → SMTP**, configure um provedor próprio (Resend, SES…). O SMTP padrão do Supabase só envia poucos e-mails por hora.
@@ -53,6 +53,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login por c
 | Área | Status |
 |---|---|
 | Convite + login por código enviado ao e-mail (pessoal ou institucional) | ✅ |
+| Cadastro com nick único (validado no app e no banco), curso e semestre obrigatórios | ✅ |
 | Vínculo confirmado por código no e-mail institucional (um endereço por conta, hash no banco, limite de tentativas e reenvios) | ✅ |
 | Sem acesso ao e-mail institucional: comprovante enviado pelo perfil, aprovado na moderação | ✅ |
 | Convites individuais: 3 ativos por pessoa, 5 usos cada, com rastreio de quem convidou | ✅ |

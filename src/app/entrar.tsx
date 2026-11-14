@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Chip, ChipRow, Field, Notice, styles, ToggleRow } from '@/components/ui';
+import { Button, Chip, ChipRow, Field, Notice, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { handleProblem, HANDLE_MAX, normalizeHandle } from '@/lib/handle';
 import { useStore } from '@/lib/store';
 import { colors } from '@/theme';
 
@@ -20,7 +21,9 @@ export default function Entrar() {
   const [invite, setInvite] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [handle, setHandle] = useState('');
   const [course, setCourse] = useState('');
+  const [semester, setSemester] = useState('');
   const [code, setCode] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +46,10 @@ export default function Entrar() {
     if (mode === 'login') return null;
     if (!invite.trim()) return 'Digite o código de convite que você recebeu.';
     if (name.trim().length < 2) return 'Conta pra gente seu nome.';
+    const nick = handleProblem(handle);
+    if (nick) return nick;
+    if (course.trim().length < 2) return 'Informe seu curso.';
+    if (!semester) return 'Escolha seu semestre.';
     if (!accepted) return 'Para entrar, aceite as regras da comunidade.';
     return null;
   };
@@ -54,7 +61,7 @@ export default function Entrar() {
       const needsCode = await actions.startSignIn(
         mode === 'login'
           ? { mode, email }
-          : { mode, email, name, course, inviteCode: invite },
+          : { mode, email, name, handle, course, semester, inviteCode: invite },
       );
       if (needsCode) setStep('code');
     });
@@ -96,6 +103,16 @@ export default function Entrar() {
                 <>
                   <Field label="Código de convite" value={invite} onChangeText={setInvite} autoCapitalize="characters" placeholder="Ex.: MACK-7KQ2P" />
                   <Field label="Seu nome" value={name} onChangeText={setName} placeholder="Como você quer aparecer" autoComplete="name" />
+                  <Field
+                    label="Nick"
+                    value={handle}
+                    onChangeText={(v) => setHandle(normalizeHandle(v).slice(0, HANDLE_MAX))}
+                    placeholder="ex.: ana.ribeiro"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="username"
+                    hint={handle ? `Você vai aparecer como @${handle}. ` + (handleProblem(handle) ?? 'Conferimos se está livre ao continuar.') : 'Único na comunidade. Letras sem acento, números, ponto ou _ (3 a 20).'}
+                  />
                 </>
               ) : null}
               <Field
@@ -112,7 +129,8 @@ export default function Entrar() {
               />
               {mode === 'signup' ? (
                 <>
-                  <Field label="Curso (opcional)" value={course} onChangeText={setCourse} placeholder="Ex.: Engenharia Civil" />
+                  <Field label="Curso" value={course} onChangeText={setCourse} placeholder="Ex.: Engenharia Civil" />
+                  <SemesterPicker value={semester} onChange={setSemester} />
                   <ToggleRow
                     label="Li e aceito as regras da comunidade"
                     hint="Respeito, nada de assédio, discriminação ou exposição de terceiros. Conteúdo pode ser denunciado e removido."

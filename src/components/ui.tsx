@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SEMESTERS } from '@/lib/handle';
 import type { User } from '@/lib/types';
 import { useMe, useStore } from '@/lib/store';
 import { colors, radius } from '@/theme';
@@ -148,6 +149,18 @@ export function Field({ label, hint, ...props }: TextInputProps & { label: strin
         style={[styles.input, props.multiline && { minHeight: 96, textAlignVertical: 'top' }, props.style]}
       />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+    </View>
+  );
+}
+
+/** Escolha do semestre em chips (1º a 12º). */
+export function SemesterPicker({ value, onChange, label = 'Semestre' }: { value: string; onChange: (v: string) => void; label?: string }) {
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <ChipRow>
+        {SEMESTERS.map((s) => <Chip key={s} label={s} active={value === s} onPress={() => onChange(s)} />)}
+      </ChipRow>
     </View>
   );
 }

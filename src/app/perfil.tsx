@@ -5,7 +5,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
 
-import { Avatar, Badge, Button, Card, Chip, ChipRow, Field, Notice, Section, styles, ToggleRow } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Chip, ChipRow, Field, Notice, Section, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { HANDLE_MAX, normalizeHandle } from '@/lib/handle';
 import { GroupCard } from '@/components/social';
 import { pickAvatar } from '@/lib/images';
 import { followersOf, followingOf } from '@/lib/social';
@@ -202,19 +203,33 @@ export default function Perfil() {
   const evidenceSent = verificationRequests.some((v) => v.userId === me.id && v.evidence);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(me.name);
+  const [handle, setHandle] = useState(me.handle);
   const [course, setCourse] = useState(me.course ?? '');
   const [semester, setSemester] = useState(me.semester ?? '');
   const [interests, setInterests] = useState(me.interests.join(', '));
 
-  const save = () => {
+  const edit = useAsync();
+  const startEditing = () => {
+    setName(me.name);
+    setHandle(me.handle);
+    setCourse(me.course ?? '');
+    setSemester(me.semester ?? '');
+    setInterests(me.interests.join(', '));
+    setEditing(true);
+  };
+  const save = () => edit.run(async () => {
+    if (course.trim().length < 2) throw new Error('Informe seu curso.');
+    if (!semester) throw new Error('Escolha seu semestre.');
+    const nick = normalizeHandle(handle) === me.handle ? me.handle : await actions.checkHandle(handle);
     actions.updateProfile({
       name: name.trim() || me.name,
-      course: course.trim() || undefined,
-      semester: semester.trim() || undefined,
+      handle: nick,
+      course: course.trim(),
+      semester,
       interests: interests.split(',').map((i) => i.trim().toLowerCase()).filter(Boolean).slice(0, 10),
     });
     setEditing(false);
-  };
+  });
 
   const myGroups = groups.filter((g) => g.members[me.id]);
   const myPosts = posts.filter((p) => p.authorId === me.id).length;
@@ -256,16 +271,19 @@ export default function Perfil() {
       {editing ? (
         <Card>
           <Field label="Nome" value={name} onChangeText={setName} />
-          <Field label="Curso (opcional)" value={course} onChangeText={setCourse} />
-          <Field label="Semestre (opcional)" value={semester} onChangeText={setSemester} placeholder="Ex.: 3º" />
+          <Field label="Nick" value={handle} onChangeText={(v) => setHandle(normalizeHandle(v).slice(0, HANDLE_MAX))}
+            autoCapitalize="none" autoCorrect={false} hint={`Você aparece como @${normalizeHandle(handle) || '…'}`} />
+          <Field label="Curso" value={course} onChangeText={setCourse} placeholder="Ex.: Engenharia Civil" />
+          <SemesterPicker value={semester} onChange={setSemester} />
           <Field label="Interesses" value={interests} onChangeText={setInterests} hint="Separados por vírgula: futsal, fotografia, games…" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Button label="Cancelar" variant="secondary" onPress={() => setEditing(false)} style={{ flex: 1 }} />
-            <Button label="Salvar" onPress={save} style={{ flex: 1 }} />
+            <Button label={edit.busy ? 'Salvando…' : 'Salvar'} disabled={edit.busy} onPress={save} style={{ flex: 1 }} />
           </View>
+          {edit.error ? <Notice tone="warn" icon="alert-circle" text={edit.error} /> : null}
         </Card>
       ) : (
-        <Button label="Editar perfil" icon="create-outline" variant="secondary" onPress={() => setEditing(true)} />
+        <Button label="Editar perfil" icon="create-outline" variant="secondary" onPress={startEditing} />
       )}
 
       <Section

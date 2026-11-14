@@ -24,7 +24,11 @@ function must<T extends { error: { message: string } | null }>(res: T): T {
 
 export function friendlyError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes('database error saving new user') || m.includes('convite')) return 'Convite inválido ou esgotado.';
+  if (m.includes('profiles_handle_key') || m.includes('nick indisponível')) return 'Esse nick já está em uso. Escolha outro.';
+  if (m.includes('handle_format') || m.includes('nick inválido')) return 'Nick inválido. Use de 3 a 20 letras sem acento, números, ponto ou _.';
+  if (m.includes('convite')) return 'Convite inválido ou esgotado.';
+  // O Supabase Auth esconde a mensagem do trigger de cadastro; o nick já foi conferido antes.
+  if (m.includes('database error saving new user')) return 'Não foi possível criar a conta. Confira o código de convite (ou se o nick acabou de ser usado) e tente de novo.';
   if (m.includes('signups not allowed')) return 'Não encontramos uma conta com esse e-mail. Para entrar pela primeira vez, você precisa de um convite.';
   if (m.includes('token has expired') || m.includes('invalid') && m.includes('otp')) return 'Código inválido ou expirado. Peça um novo.';
   if (m.includes('rate limit') || m.includes('security purposes')) return 'Muitas tentativas. Espere um pouco e tente de novo.';
@@ -228,12 +232,22 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
 }
 
 // ───────────────────────── Autenticação (código por e-mail) ─────────────────────────
-export async function requestCode(email: string, signup?: { name: string; course?: string; inviteCode: string }) {
+export interface SignupMeta { name: string; handle: string; course: string; semester: string; inviteCode: string }
+
+export async function handleAvailable(handle: string): Promise<boolean> {
+  const res = must(await sb().rpc('handle_available', { p_handle: handle }));
+  return res.data === true;
+}
+
+export async function requestCode(email: string, signup?: SignupMeta) {
   const { error } = await sb().auth.signInWithOtp({
     email: email.trim().toLowerCase(),
     options: {
       shouldCreateUser: !!signup,
-      data: signup ? { name: signup.name.trim(), course: signup.course?.trim(), invite_code: signup.inviteCode.trim().toUpperCase() } : undefined,
+      data: signup ? {
+        name: signup.name.trim(), handle: signup.handle, course: signup.course.trim(), semester: signup.semester,
+        invite_code: signup.inviteCode.trim().toUpperCase(),
+      } : undefined,
     },
   });
   if (error) throw new Error(friendlyError(error.message));
@@ -380,9 +394,10 @@ export async function setBlock(me: ID, userId: ID, on: boolean) {
   else must(await sb().from('blocks').delete().match({ blocker_id: me, blocked_id: userId }));
 }
 
-export async function updateProfile(me: ID, patch: Partial<Pick<User, 'name' | 'course' | 'semester' | 'interests'>>) {
+export async function updateProfile(me: ID, patch: Partial<Pick<User, 'name' | 'handle' | 'course' | 'semester' | 'interests'>>) {
   must(await sb().from('profiles').update({
     ...(patch.name !== undefined && { name: patch.name }),
+    ...(patch.handle !== undefined && { handle: patch.handle }),
     ...('course' in patch && { course: patch.course ?? null }),
     ...('semester' in patch && { semester: patch.semester ?? null }),
     ...(patch.interests !== undefined && { interests: patch.interests }),
