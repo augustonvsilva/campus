@@ -22,22 +22,23 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 |---|---|
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
-| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 144 cenários de segurança: convite, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
-| `npm run test:e2e` | 29 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
+| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 156 cenários de segurança: convite, exclusão de conta, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
+| `npm run test:e2e` | 31 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
 
 ## Colocar o Supabase no ar
 
 1. Crie um projeto em [supabase.com](https://supabase.com). Sugestão: região **São Paulo (sa-east-1)**, pensando na LGPD.
 2. Aplique o banco, por um destes caminhos:
-   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
+   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql`, `0007_excluir_conta.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
    - **CLI:** `npx supabase link --project-ref <ref>` e depois `npx supabase db push`.
 3. Em **Authentication → Email Templates → Magic Link**, inclua `{{ .Token }}` no texto, para o e-mail trazer o código de 6 dígitos. Exemplo: `Seu código do Campus: {{ .Token }}`.
    Em **Authentication → Providers → Email**, defina o tamanho mínimo de senha como 8 (o app já exige 8, com letras e números) e deixe *Secure password change* desligado: a troca de senha no perfil não pede a senha antiga, já que a recuperação é feita por código no e-mail.
 4. Em **Authentication → SMTP**, configure um provedor próprio (Resend, SES…). O SMTP padrão do Supabase só envia poucos e-mails por hora.
-5. Publique a Edge Function que envia o código de vínculo ao e-mail institucional:
+5. Publique as Edge Functions (código de vínculo no e-mail institucional e exclusão de conta):
    ```bash
    npx supabase secrets set RESEND_API_KEY=re_... EMAIL_FROM="Campus <verificacao@seudominio.com.br>"
    npx supabase functions deploy verificar-vinculo
+   npx supabase functions deploy excluir-conta
    ```
    O remetente precisa de domínio verificado no Resend (SPF/DKIM). Sem isso, o servidor de e-mail da universidade tende a mandar o código para o spam ou recusá-lo.
 6. Copie `.env.example` para `.env.local` e preencha com URL e *publishable key* (Project Settings → API). **Nunca** use a `service_role` no app.
@@ -54,6 +55,8 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | Área | Status |
 |---|---|
 | Convite + login com e-mail (pessoal ou institucional) e senha; cadastro confirma o e-mail por código | ✅ |
+| Excluir conta (apaga dados e arquivos; comunidades passam ao membro mais antigo) | ✅ |
+| Termos de uso, Política de Privacidade e aviso de não afiliação | ✅ rascunho, revisar com advogado (`src/lib/legal.ts`) |
 | "Esqueci a senha": entra com código por e-mail e cria nova senha; troca de senha no perfil | ✅ |
 | Cadastro com nome de usuário único (validado no app e no banco), curso (lista com busca ou "Outro") e semestre obrigatórios | ✅ |
 | Vínculo confirmado por código no e-mail institucional (um endereço por conta, hash no banco, limite de tentativas e reenvios) | ✅ |
@@ -111,4 +114,5 @@ Para abrir outra universidade:
 
 - Confirmar com o Mackenzie os domínios de e-mail dos alunos.
 - Trocar os lugares e eventos de exemplo por reais e verificados (ver `supabase/seed.sql`).
-- Termos de uso e política de privacidade (LGPD) antes de abrir para estudantes.
+- Revisar com advogado os Termos e a Política de Privacidade (`src/lib/legal.ts`) e preencher controlador, CNPJ e e-mail de contato (hoje `privacidade@SEU-DOMINIO.com.br`).
+- Guardar registros de acesso (IP, data e hora) por 6 meses, como exige o art. 15 do Marco Civil: os logs do Supabase não cobrem esse prazo em todos os planos.

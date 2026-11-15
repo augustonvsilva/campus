@@ -1,9 +1,11 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
+import { NOT_AFFILIATED } from '@/lib/legal';
 import { useStore } from '@/lib/store';
 import { colors } from '@/theme';
 
@@ -47,6 +49,12 @@ export default function Entrar() {
     }
   };
 
+  /** Envolve um setter de campo: ao editar, o aviso de erro anterior some. */
+  const edit = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v);
+    setError(null);
+  };
+
   const emailOk = () => /^\S+@\S+\.\S+$/.test(email.trim());
 
   const validate = (): string | null => {
@@ -60,7 +68,7 @@ export default function Entrar() {
     if (pw) return pw;
     if (course.trim().length < 2) return 'Escolha seu curso.';
     if (!semester) return 'Escolha seu semestre.';
-    if (!accepted) return 'Para entrar, aceite as regras da comunidade.';
+    if (!accepted) return 'Para entrar, aceite os Termos de uso e a Política de Privacidade.';
     return null;
   };
 
@@ -123,7 +131,7 @@ export default function Entrar() {
             <Field label="Código" value={code} onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
               keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" placeholder="000000" />
             {codeFor === 'reset' ? (
-              <PasswordField label="Nova senha (opcional)" value={newPassword} onChangeText={setNewPassword}
+              <PasswordField label="Nova senha (opcional)" value={newPassword} onChangeText={edit(setNewPassword)}
                 autoComplete="new-password" textContentType="newPassword" placeholder="Mínimo de 8 caracteres" />
             ) : null}
             {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
@@ -140,12 +148,12 @@ export default function Entrar() {
             <View style={{ gap: 14 }}>
               {mode === 'signup' ? (
                 <>
-                  <Field label="Código de convite" value={invite} onChangeText={setInvite} autoCapitalize="characters" placeholder="Ex.: MACK-7KQ2P" />
-                  <Field label="Seu nome" value={name} onChangeText={setName} placeholder="Como você quer aparecer" autoComplete="name" />
+                  <Field label="Código de convite" value={invite} onChangeText={edit(setInvite)} autoCapitalize="characters" placeholder="Ex.: MACK-7KQ2P" />
+                  <Field label="Seu nome" value={name} onChangeText={edit(setName)} placeholder="Como você quer aparecer" autoComplete="name" />
                   <Field
                     label="Nome de usuário"
                     value={handle}
-                    onChangeText={(v) => setHandle(normalizeHandle(v).slice(0, HANDLE_MAX))}
+                    onChangeText={edit((v: string) => setHandle(normalizeHandle(v).slice(0, HANDLE_MAX)))}
                     placeholder="ex.: ana.ribeiro"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -157,7 +165,7 @@ export default function Entrar() {
               <Field
                 label="E-mail"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={edit(setEmail)}
                 placeholder="seu@email.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -166,7 +174,7 @@ export default function Entrar() {
               <PasswordField
                 label="Senha"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={edit(setPassword)}
                 placeholder={mode === 'signup' ? 'Mínimo de 8 caracteres' : 'Sua senha'}
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 textContentType={mode === 'signup' ? 'newPassword' : 'password'}
@@ -174,14 +182,18 @@ export default function Entrar() {
               />
               {mode === 'signup' ? (
                 <>
-                  <CoursePicker value={course} onChange={setCourse} courses={community.courses} />
-                  <SemesterPicker value={semester} onChange={setSemester} />
+                  <CoursePicker value={course} onChange={edit(setCourse)} courses={community.courses} />
+                  <SemesterPicker value={semester} onChange={edit(setSemester)} />
                   <ToggleRow
-                    label="Li e aceito as regras da comunidade"
+                    label="Li e aceito os Termos de uso e a Política de Privacidade"
                     hint="Respeito, nada de assédio, discriminação ou exposição de terceiros. Conteúdo pode ser denunciado e removido."
                     value={accepted}
-                    onValueChange={setAccepted}
+                    onValueChange={edit(setAccepted)}
                   />
+                  <View style={{ flexDirection: 'row', gap: 16 }}>
+                    <Text style={[styles.label, { color: colors.accent }]} accessibilityRole="link" onPress={() => router.push('/termos')}>Termos de uso</Text>
+                    <Text style={[styles.label, { color: colors.accent }]} accessibilityRole="link" onPress={() => router.push('/privacidade')}>Política de Privacidade</Text>
+                  </View>
                 </>
               ) : null}
             </View>
@@ -202,6 +214,7 @@ export default function Entrar() {
                 Convites: MACK2026 (membro) ou FUNDADORES (admin, com acesso à moderação).
               </Text>
             ) : null}
+            <Text style={[styles.hint, { textAlign: 'center' }]}>{NOT_AFFILIATED}</Text>
           </>
         )}
       </ScrollView>

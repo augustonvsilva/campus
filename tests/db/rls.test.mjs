@@ -53,6 +53,7 @@ const rawUser = async (email, meta) =>
 // Conta criada antes do nick obrigatório: a 0006 precisa gerar um nick para ela.
 const legado = await rawUser('legado@gmail.com', { name: 'João Legado', invite_code: 'FUNDADORES' });
 await expectOk('migrations/0006_nick_curso_semestre.sql', () => db.exec(readFileSync(`${root}/supabase/migrations/0006_nick_curso_semestre.sql`, 'utf8')));
+await expectOk('migrations/0007_excluir_conta.sql', () => db.exec(readFileSync(`${root}/supabase/migrations/0007_excluir_conta.sql`, 'utf8')));
 const legadoHandle = (await rows(`select handle from profiles where id = $1`, [legado]))[0].handle;
 /^joao\.[0-9a-f]{4}$/.test(legadoHandle) ? ok(`conta antiga recebe nick gerado (${legadoHandle})`) : bad('nick da conta antiga', legadoHandle);
 
@@ -319,6 +320,43 @@ await as(lia, () => expectFail('não troca para nick reservado ou inválido', ()
 const outraLia = await newUser('lia@mackenzista.com.br', { name: 'Outra Lia', invite_code: 'FUNDADORES' });
 (await verificationOf(outraLia)) === 'pending'
   ? ok('cadastro direto com e-mail institucional já usado não verifica') : bad('e-mail institucional verificou duas contas');
+
+console.log('Excluir conta');
+const tchau = await newUser('tchau@mackenzista.com.br', { name: 'Tchau', invite_code: 'FUNDADORES' });
+const fica = await newUser('fica@mackenzista.com.br', { name: 'Fica', invite_code: 'FUNDADORES' });
+await db.exec(`update profiles set role = 'moderator' where id = '${tchau}'`);
+const tchauPost = (await as(tchau, () => rows(`insert into posts (community_id, author_id, body) values ('mackenzie', $1, 'até mais') returning id`, [tchau])))[0].id;
+const ficaPost = (await as(fica, () => rows(`insert into posts (community_id, author_id, body) values ('mackenzie', $1, 'eu fico') returning id`, [fica])))[0].id;
+await as(tchau, () => q(`insert into comments (community_id, post_id, author_id, body) values ('mackenzie', $1, $2, 'boa')`, [ficaPost, tchau]));
+await as(tchau, () => q(`insert into post_likes (post_id, user_id) values ($1, $2)`, [ficaPost, tchau]));
+await as(tchau, () => q(`insert into follows (follower_id, followee_id) values ($1, $2)`, [tchau, fica]));
+await as(fica, () => q(`insert into follows (follower_id, followee_id) values ($1, $2)`, [fica, tchau]));
+const comMembro = (await as(tchau, () => rows(`insert into groups (community_id, name, kind, created_by) values ('mackenzie', 'Grupo com membro', 'interesse', $1) returning id`, [tchau])))[0].id;
+const sozinho = (await as(tchau, () => rows(`insert into groups (community_id, name, kind, created_by) values ('mackenzie', 'Grupo sozinho', 'interesse', $1) returning id`, [tchau])))[0].id;
+await as(fica, () => q(`insert into group_members (group_id, user_id) values ($1, $2)`, [comMembro, fica]));
+const report = (await rows(`insert into reports (community_id, reporter_id, target_type, target_id, reason, status, resolved_by)
+  values ('mackenzie', $1, 'post', $2, 'teste', 'resolvida', $3) returning id`, [fica, ficaPost, tchau]))[0].id;
+await as(tchau, () => expectFail('aluno não chama a preparação de exclusão', () => q(`select prepare_account_deletion($1)`, [fica]), 'permission denied'));
+await expectOk('preparar exclusão (service role)', () => asService(() => q(`select prepare_account_deletion($1)`, [tchau])));
+await expectOk('excluir usuário do Auth leva o perfil em cascata', () => q(`delete from auth.users where id = $1`, [tchau]));
+const sobra = await rows(`select
+  (select count(*) from profiles where id = $1)::int as perfil,
+  (select count(*) from posts where author_id = $1)::int as posts,
+  (select count(*) from comments where author_id = $1)::int as comentarios,
+  (select count(*) from post_likes where user_id = $1)::int as curtidas,
+  (select count(*) from follows where follower_id = $1 or followee_id = $1)::int as conexoes,
+  (select count(*) from group_members where user_id = $1)::int as membros,
+  (select count(*) from institutional_emails where user_id = $1)::int as email_inst`, [tchau]);
+Object.values(sobra[0]).every((n) => n === 0) ? ok('nenhum dado da conta excluída sobra') : bad('sobrou dado da conta excluída', JSON.stringify(sobra[0]));
+(await rows(`select id from posts where id = $1`, [ficaPost])).length === 1 ? ok('publicações de outras pessoas ficam') : bad('post de outra pessoa sumiu');
+(await rows(`select role from group_members where group_id = $1 and user_id = $2`, [comMembro, fica]))[0]?.role === 'admin'
+  ? ok('membro mais antigo vira admin da comunidade') : bad('comunidade ficou sem admin');
+(await rows(`select id from groups where id = $1`, [sozinho])).length === 0 ? ok('comunidade sem outros membros é apagada') : bad('comunidade vazia ficou');
+const rep = (await rows(`select resolved_by from reports where id = $1`, [report]))[0];
+rep && rep.resolved_by === null ? ok('histórico da moderação fica, sem o autor') : bad('denúncia resolvida sumiu ou manteve o autor', JSON.stringify(rep));
+(await rows(`select id from posts where id = $1`, [tchauPost])).length === 0 ? ok('publicação da conta excluída some') : bad('post da conta excluída ficou');
+const volta = await expectOk('o e-mail institucional fica livre para uma nova conta', () => newUser('tchau@mackenzista.com.br', { name: 'Volta', invite_code: 'FUNDADORES' }));
+(await verificationOf(volta)) === 'email' ? ok('nova conta com o mesmo e-mail institucional é verificada') : bad('e-mail institucional continuou preso');
 
 console.log(failures ? `\n${failures} FALHA(S)` : '\nTodos os cenários passaram.');
 process.exit(failures ? 1 : 0);

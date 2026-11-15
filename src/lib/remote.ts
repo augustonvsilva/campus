@@ -302,6 +302,12 @@ export async function setPassword(password: string) {
   if (error) throw new Error(friendlyError(error.message));
 }
 
+/** Exclui a conta logada e todos os dados dela (Edge Function `excluir-conta`). */
+export async function deleteAccount() {
+  const { error } = await sb().functions.invoke('excluir-conta', { method: 'POST' });
+  if (error) throw new Error('Não foi possível excluir a conta agora. Tente de novo em instantes.');
+}
+
 export async function signOut() {
   await sb().auth.signOut();
 }

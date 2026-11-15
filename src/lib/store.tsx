@@ -70,6 +70,49 @@ function inviteCode() {
   return 'MACK-' + Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
 }
 
+/** Demo: remove a conta e o que ela criou, com as mesmas regras do banco (migration 0007). */
+function withoutUser(s: State, m: ID): State {
+  const notMe = (ids: ID[]) => ids.filter((id) => id !== m);
+  const noComments = <T extends { comments: Comment[] }>(x: T): T => ({ ...x, comments: x.comments.filter((c) => c.authorId !== m) });
+  const users = { ...s.users };
+  delete users[m];
+  const passwords = { ...s.passwords };
+  delete passwords[m];
+  const following: Record<ID, ID[]> = {};
+  for (const [who, list] of Object.entries(s.following)) if (who !== m) following[who] = notMe(list);
+  const groups = s.groups.flatMap((g) => {
+    if (!g.members[m]) return [g];
+    const members = { ...g.members };
+    delete members[m];
+    const others = Object.keys(members);
+    if (!others.length) return [];
+    // Era o único admin: o membro mais antigo (primeiro da lista) assume.
+    if (g.members[m] === 'admin' && !others.some((id) => members[id] === 'admin')) members[others[0]!] = 'admin';
+    return [{ ...g, members }];
+  });
+  const groupIds = new Set(groups.map((g) => g.id));
+  return {
+    ...s,
+    session: null,
+    users,
+    passwords,
+    following,
+    groups,
+    posts: s.posts.filter((p) => p.authorId !== m && (!p.groupId || groupIds.has(p.groupId))).map((p) => noComments({
+      ...p, likes: notMe(p.likes), poll: p.poll?.map((o) => ({ ...o, votes: notMe(o.votes) })),
+    })),
+    boras: s.boras.filter((b) => b.authorId !== m).map((b) => noComments({ ...b, participants: notMe(b.participants) })),
+    events: s.events.filter((e) => !e.groupId || groupIds.has(e.groupId))
+      .map((e) => ({ ...e, interested: notMe(e.interested), going: notMe(e.going) })),
+    rides: s.rides.filter((r) => groupIds.has(r.groupId)).map((r) => ({ ...r, reservations: notMe(r.reservations) })),
+    places: s.places.map((pl) => ({ ...pl, recommendations: pl.recommendations.filter((r) => r.authorId !== m) })),
+    reports: s.reports.filter((r) => r.reporterId !== m),
+    invites: s.invites.filter((i) => i.createdBy !== m),
+    verificationRequests: s.verificationRequests.filter((v) => v.userId !== m),
+    blocked: notMe(s.blocked),
+  };
+}
+
 export type SignInInput =
   | { mode: 'signup'; name: string; handle: string; email: string; password: string; course: string; semester: string; inviteCode: string }
   | { mode: 'login'; email: string; password: string }
@@ -273,6 +316,21 @@ function useCampusState() {
             setError(`Você entrou, mas a senha não foi salva: ${errorMessage(e)} Crie uma no perfil.`));
         }
         await load(session.user.id);
+      },
+      /**
+       * Exclui a conta e todos os dados dela (LGPD). No Supabase, a Edge Function `excluir-conta`
+       * apaga arquivos, passa a administração de comunidades e remove o usuário (o banco apaga o resto).
+       */
+      async deleteAccount() {
+        const m = me();
+        if (!m) throw new Error('Sem sessão');
+        if (SUPABASE_ENABLED) {
+          await remote.deleteAccount();
+          await remote.signOut().catch(() => {});
+          setState(emptyState());
+          return;
+        }
+        setState((s) => withoutUser(s, m));
       },
       /** Cria ou troca a senha da conta logada. */
       async setPassword(password: string) {

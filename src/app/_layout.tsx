@@ -68,6 +68,9 @@ function RootStack() {
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="entrar" options={{ headerShown: false }} />
       </Stack.Protected>
+      {/* Textos legais: abertos com ou sem sessão (o cadastro linka para eles). */}
+      <Stack.Screen name="termos" options={{ title: 'Termos de uso' }} />
+      <Stack.Screen name="privacidade" options={{ title: 'Privacidade' }} />
     </Stack>
   );
 }

@@ -138,10 +138,12 @@ function VerificationCard({ userId }: { userId: ID }) {
 }
 
 export default function Moderacao() {
-  const { reports, users, refreshing, actions } = useStore();
+  const { reports, users, refreshing, actions, verificationRequests } = useStore();
   const [tab, setTab] = useState<'denuncias' | 'verificacoes'>('denuncias');
   const open = reports.filter((r) => r.status === 'aberta').sort((a, b) => b.createdAt - a.createdAt);
-  const pending = Object.values(users).filter((u) => u.verification === 'pending').sort((a, b) => a.joinedAt - b.joinedAt);
+  // Só quem pediu verificação manual (comprovante). Quem ainda vai confirmar pelo e-mail institucional não entra na fila.
+  const requested = new Set(verificationRequests.map((v) => v.userId));
+  const pending = Object.values(users).filter((u) => u.verification === 'pending' && requested.has(u.id)).sort((a, b) => a.joinedAt - b.joinedAt);
 
   return (
     <ScrollView

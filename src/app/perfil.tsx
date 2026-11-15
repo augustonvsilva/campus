@@ -9,6 +9,7 @@ import { Avatar, Badge, Button, Card, Chip, ChipRow, CoursePicker, Field, Notice
 import { HANDLE_MAX, normalizeHandle } from '@/lib/handle';
 import { GroupCard } from '@/components/social';
 import { pickAvatar } from '@/lib/images';
+import { NOT_AFFILIATED } from '@/lib/legal';
 import { followersOf, followingOf } from '@/lib/social';
 import { canPublish, isModerator, useMe, useStore } from '@/lib/store';
 import { colors } from '@/theme';
@@ -191,6 +192,37 @@ function PasswordSection() {
           disabled={busy || !password} onPress={save} />
       </Card>
     </Section>
+  );
+}
+
+/** Exclusão da conta: pede o nome de usuário para confirmar, porque não dá para desfazer. */
+function DeleteAccountSection() {
+  const { actions } = useStore();
+  const me = useMe();
+  const { busy, error, run } = useAsync();
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const confirmed = typed.trim().replace(/^@/, '').toLowerCase() === me.handle;
+
+  if (!open) {
+    return <Button label="Excluir conta" icon="trash-outline" variant="ghost" compact onPress={() => setOpen(true)} />;
+  }
+  return (
+    <Card>
+      <Text style={styles.title}>Excluir conta</Text>
+      <Text style={styles.muted}>
+        Apaga sua conta e tudo o que você criou: perfil, foto, publicações, comentários, Bora?, conexões e o vínculo verificado.
+        Comunidades em que você é o único admin passam para o membro mais antigo. Não dá para desfazer.
+      </Text>
+      <Field label={`Para confirmar, digite seu nome de usuário (${me.handle})`} value={typed} onChangeText={setTyped}
+        autoCapitalize="none" autoCorrect={false} placeholder={me.handle} />
+      {error ? <Notice tone="warn" icon="alert-circle" text={error} /> : null}
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Button label="Cancelar" variant="secondary" compact style={{ flex: 1 }} onPress={() => { setOpen(false); setTyped(''); }} />
+        <Button label={busy ? 'Excluindo…' : 'Excluir para sempre'} icon="trash" variant="danger" compact style={{ flex: 1 }}
+          disabled={busy || !confirmed} onPress={() => run(actions.deleteAccount)} />
+      </View>
+    </Card>
   );
 }
 
@@ -377,8 +409,23 @@ export default function Perfil() {
         )}
       </Section>
 
+      <Section title="Sobre">
+        <Card>
+          <Pressable onPress={() => router.push('/termos')} accessibilityRole="link" style={[styles.row, { justifyContent: 'space-between' }]}>
+            <Text style={styles.body}>Termos de uso</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+          <Pressable onPress={() => router.push('/privacidade')} accessibilityRole="link" style={[styles.row, { justifyContent: 'space-between' }]}>
+            <Text style={styles.body}>Política de Privacidade</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+          <Text style={styles.hint}>{NOT_AFFILIATED}</Text>
+        </Card>
+      </Section>
+
       <View style={{ gap: 10 }}>
         <Button label="Sair" icon="log-out-outline" variant="danger" onPress={actions.signOut} />
+        <DeleteAccountSection />
         {backend === 'demo' ? (
           <Button label="Restaurar dados de demonstração" icon="refresh" variant="ghost" compact onPress={actions.resetDemo} />
         ) : null}

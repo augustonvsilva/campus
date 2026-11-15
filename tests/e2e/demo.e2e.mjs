@@ -40,6 +40,18 @@ await check('abre a tela de entrada', async () => {
 
 const pickSemester = (s) => page.getByText(s, { exact: true }).locator('visible=true').and(LIVE).first().click();
 
+await check('termos, privacidade e aviso de independência na entrada', async () => {
+  await visible('projeto independente, sem vínculo oficial', { exact: false });
+  await page.getByText('Termos de uso', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Regras da comunidade');
+  await page.goBack();
+  await page.getByText('Política de Privacidade', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Dados que coletamos');
+  await shot('01a-privacidade');
+  await page.goBack();
+  await visible('Tenho um convite');
+});
+
 await check('cadastro exige nome de usuário, curso e semestre', async () => {
   await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('ERRADO');
   await page.getByPlaceholder('Como você quer aparecer').fill('Teste Fundador');
@@ -451,6 +463,24 @@ await check('verificação pelo e-mail institucional no perfil', async () => {
   await visible('Verificado por aluna@mackenzista.com.br');
   await visible('@aluna.pessoal · Mackenzie · Gastronomia (1º sem.)', { exact: false });
   await shot('13-verificado');
+});
+
+await check('excluir conta (confirmação pelo nome de usuário)', async () => {
+  await page.goto(BASE + '/perfil');
+  await page.getByText('Excluir conta', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  const confirmBtn = page.getByRole('button', { name: 'Excluir para sempre' }).locator('visible=true').and(LIVE).first();
+  const field = page.getByPlaceholder('aluna.pessoal').locator('visible=true').and(LIVE).first();
+  await field.fill('outra.pessoa');
+  if (!(await confirmBtn.isDisabled())) throw new Error('botão deveria ficar desativado com nome errado');
+  await field.fill('@aluna.pessoal');
+  await shot('14-excluir-conta');
+  await confirmBtn.click();
+  await visible('Tenho um convite');
+  await page.getByText('Já tenho conta').click();
+  await page.getByPlaceholder('seu@email.com').fill('aluna@gmail.com');
+  await page.getByPlaceholder('Sua senha').fill('aluna2026');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Não encontramos uma conta com esse e-mail neste aparelho.');
 });
 
 console.log(results.join('\n'));
