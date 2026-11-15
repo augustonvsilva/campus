@@ -26,10 +26,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit
-      - name: Gerar site (modo demonstração)
+      # Com as variáveis do repositório EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+      # (Settings → Secrets and variables → Actions → Variables), o site usa o Supabase.
+      # Sem elas, sai no modo demonstração. São chaves públicas: a segurança vem do RLS.
+      - name: Gerar site
         run: npx expo export --platform web --output-dir dist
         env:
           EXPO_BASE_URL: /${{ github.event.repository.name }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       - name: Ajustes para o GitHub Pages
         run: |
           # Rotas do app (ex.: /campus/eventos) abrem direto mesmo ao recarregar a página.
