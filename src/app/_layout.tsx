@@ -10,7 +10,7 @@ import { isModerator, StoreProvider, useStore } from '@/lib/store';
 import { colors, themeMode } from '@/theme';
 
 /** Largura máxima da coluna de conteúdo (feed e telas). */
-const MAX_WIDTH = 760;
+const MAX_WIDTH = 980;
 /** A partir desta largura aparece também a coluna da direita (em alta, pessoas). */
 const RAIL = 1320;
 
