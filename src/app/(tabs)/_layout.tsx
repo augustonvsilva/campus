@@ -46,7 +46,7 @@ export default function TabsLayout() {
         tabBarStyle: wide ? { display: 'none' } : {
           position: 'absolute', left: 12, right: 12, bottom: 12, height: 66, paddingTop: 6, paddingBottom: 8,
           borderRadius: 22, borderTopWidth: 1, borderWidth: 1, borderColor: colors.border, borderTopColor: colors.border,
-          backgroundColor: 'rgba(21,18,30,0.96)', boxShadow: '0px 8px 30px rgba(0,0,0,0.55)',
+          backgroundColor: colors.glass, boxShadow: `0px 8px 30px ${colors.shadow}`,
         },
         tabBarActiveTintColor: colors.accentSoft,
         tabBarInactiveTintColor: colors.muted,

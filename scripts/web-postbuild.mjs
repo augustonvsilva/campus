@@ -20,7 +20,7 @@ for (const f of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const tags = [
   `<meta name="description" content="${esc(description)}">`,
-  '<meta name="theme-color" content="#0B0911">',
+  '<meta name="theme-color" content="#0A0A0D">',
   `<link rel="manifest" href="${base}/manifest.webmanifest">`,
   `<link rel="apple-touch-icon" href="${base}/apple-touch-icon.png">`,
   '<meta name="apple-mobile-web-app-capable" content="yes">',

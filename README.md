@@ -63,6 +63,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | Conversa nas saídas e chave Pix com botão de copiar | ✅ |
 | Site instalável (PWA: ícone na tela inicial) e prévia de link no WhatsApp/Instagram | ✅ |
 | Mensagens privadas | 🧪 só no modo demonstração (ficam no aparelho; respostas automáticas das pessoas fictícias). Falta tabela + RLS no banco |
+| Tema escuro, claro ou do sistema (Perfil → Aparência); logo do Campus no ícone, nos menus e ao fundo | ✅ |
 | Excluir conta (apaga dados e arquivos; comunidades passam ao membro mais antigo) | ✅ |
 | Termos de uso, Política de Privacidade e aviso de não afiliação | ✅ rascunho, revisar com advogado (`src/lib/legal.ts`) |
 | "Esqueci a senha": entra com código por e-mail e cria nova senha; troca de senha no perfil | ✅ |

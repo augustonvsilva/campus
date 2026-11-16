@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { BrandWatermark, Button, CampusLogo, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
 import { NOT_AFFILIATED } from '@/lib/legal';
 import { useStore } from '@/lib/store';
@@ -117,9 +117,11 @@ export default function Entrar() {
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <BrandWatermark size={460} opacity={0.07} style={{ right: -150, top: -40 }} />
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 32, gap: 24 }]} keyboardShouldPersistTaps="handled">
         <View style={{ gap: 8 }}>
-          <Text style={styles.kicker}>{community.shortName.toUpperCase()} · ACESSO POR CONVITE</Text>
+          <CampusLogo size={76} />
+          <Text style={[styles.kicker, { marginTop: 8 }]}>{community.shortName.toUpperCase()} · ACESSO POR CONVITE</Text>
           <Text style={{ color: colors.text, fontSize: 56, fontWeight: '900', letterSpacing: -2 }}>CAMPUS</Text>
           <Text style={[styles.body, { fontSize: 18, color: colors.muted }]}>Onde a vida universitária acontece.</Text>
         </View>

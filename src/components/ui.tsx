@@ -10,7 +10,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SEMESTERS } from '@/lib/handle';
 import type { User } from '@/lib/types';
 import { useMe, useStore } from '@/lib/store';
-import { colors, glow, hardShadow, radius } from '@/theme';
+import { colors, glow, hardShadow, onThemeChange, radius, themeMode } from '@/theme';
+
+const LOGO = require('../../assets/brand/logo.png');
+const LOGO_LIGHT = require('../../assets/brand/logo-light.png');
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -45,14 +48,19 @@ export function useWide() {
   return useWindowDimensions().width >= WIDE;
 }
 
-/** Símbolo do Campus: "C" num círculo violeta com anel. */
+/** Símbolo do Campus (hexágono vermelho e branco). No tema claro, as partes brancas viram grafite. */
 export function CampusLogo({ size = 44 }: { size?: number }) {
   return (
-    <View accessibilityLabel="Campus"
-      style={{ width: size, height: size, borderRadius: size / 2, borderWidth: Math.max(2, Math.round(size * 0.07)), borderColor: colors.accent, padding: Math.round(size * 0.06), ...glow(0.7) }}>
-      <View style={{ flex: 1, borderRadius: size, backgroundColor: colors.accentDeep, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: size * 0.48, lineHeight: size * 0.56, includeFontPadding: false }}>C</Text>
-      </View>
+    <Image source={themeMode() === 'light' ? LOGO_LIGHT : LOGO} accessibilityLabel="Campus"
+      style={{ width: size, height: size }} resizeMode="contain" />
+  );
+}
+
+/** Logo grande e bem apagado, ao fundo (decoração; não recebe toques). */
+export function BrandWatermark({ size = 520, opacity = 0.06, style }: { size?: number; opacity?: number; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View pointerEvents="none" style={[{ position: 'absolute', width: size, height: size, opacity }, style]}>
+      <Image source={themeMode() === 'light' ? LOGO_LIGHT : LOGO} style={{ width: size, height: size }} resizeMode="contain" />
     </View>
   );
 }
@@ -74,7 +82,7 @@ export function TabHeader({ title, subtitle }: { title: string; subtitle?: strin
   return (
     <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
       <View style={[styles.row, { flex: 1, gap: 12 }]}>
-        <CampusLogo size={40} />
+        <CampusLogo size={42} />
         <View style={{ flex: 1 }}>
           <Text style={styles.kicker} numberOfLines={1}>{community.shortName}</Text>
           <Text style={[styles.h1, { fontSize: 28, lineHeight: 32 }]}>{title}</Text>
@@ -379,7 +387,8 @@ export function VerifyPrompt({ text }: { text: string }) {
   );
 }
 
-export const styles = StyleSheet.create({
+/** Estilos montados a partir da paleta ativa (refeitos quando o tema muda). */
+const makeStyles = () => StyleSheet.create({
   headerIcon: {
     width: 42, height: 42, alignItems: 'center', justifyContent: 'center', marginRight: 6,
     borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
@@ -390,13 +399,13 @@ export const styles = StyleSheet.create({
   },
   badgeDotText: { color: colors.onAccent, fontSize: 10, fontWeight: '900' },
   header: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 14, backgroundColor: colors.bg,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 14, backgroundColor: colors.glass,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   tag: { alignSelf: 'flex-start', backgroundColor: colors.accent, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 6 },
   tagText: { color: colors.onAccent, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
   kicker: { color: colors.accentSoft, fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
-  h1: { color: colors.text, fontSize: 32, fontWeight: '900', letterSpacing: -0.8, lineHeight: 36 },
+  h1: { color: colors.text, fontSize: 32, fontWeight: '900', letterSpacing: -1, lineHeight: 36 },
   h2: { color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
   title: { color: colors.text, fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
   body: { color: colors.text, fontSize: 15, lineHeight: 22 },
@@ -422,8 +431,8 @@ export const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 11, fontWeight: '800' },
   card: {
-    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, gap: 12,
-    borderWidth: 1, borderColor: colors.border, ...hardShadow(4),
+    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 18, gap: 12,
+    borderWidth: 1, borderColor: colors.border, ...hardShadow(3),
   },
   cardPressed: { opacity: 0.88, transform: [{ scale: 0.995 }] },
   /** Faixa violeta à esquerda (publicações). */
@@ -432,8 +441,8 @@ export const styles = StyleSheet.create({
   sectionBar: { width: 4, height: 18, borderRadius: 2, backgroundColor: colors.accent },
   sectionTitle: { color: colors.text, fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
   input: {
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
-    color: colors.text, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
+    backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    color: colors.text, paddingHorizontal: 16, paddingVertical: 13, fontSize: 15,
   },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
   empty: {
@@ -450,6 +459,9 @@ export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, gap: 16, paddingBottom: 96 },
   bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, gap: 4 },
-  bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 6, ...glow(0.5) },
+  bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 6, ...glow(0.4) },
   bubbleTheirs: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 6 },
 });
+
+export const styles = makeStyles();
+onThemeChange(() => Object.assign(styles, makeStyles()));

@@ -4,7 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FollowButton, GroupBadge, PersonRow } from '@/components/social';
-import { Button, Card, Chip, ChipRow, Notice, Section, styles } from '@/components/ui';
+import { BrandWatermark, Button, CampusLogo, Card, Chip, ChipRow, Notice, Section, styles } from '@/components/ui';
 import { groupKind } from '@/lib/labels';
 import { suggestPeople } from '@/lib/social';
 import { canPublish, useMe, useStore } from '@/lib/store';
@@ -52,8 +52,11 @@ export default function BoasVindas() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, gap: 26 }]}>
+    <View style={styles.screen}>
+    <BrandWatermark size={420} opacity={0.06} style={{ right: -140, top: -30 }} />
+    <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, gap: 26 }]}>
       <View style={{ gap: 6 }}>
+        <CampusLogo size={56} />
         <Text style={styles.kicker}>BOAS-VINDAS</Text>
         <Text style={styles.h1}>Que bom ter você aqui, {first}!</Text>
         <Text style={styles.muted}>Três passos rápidos para o seu feed não começar vazio.</Text>
@@ -103,5 +106,6 @@ export default function BoasVindas() {
         <Button label="Pular por agora" variant="ghost" compact onPress={finish} />
       </View>
     </ScrollView>
+    </View>
   );
 }

@@ -7,8 +7,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { canPublish, useMe, useStore } from '@/lib/store';
 import { useNow } from '@/lib/time';
-import { colors, glow, radius } from '@/theme';
-import { Avatar, CampusLogo, IconName, styles } from './ui';
+import { colors, glow, radius, themeMode } from '@/theme';
+import { Avatar, BrandWatermark, CampusLogo, IconName, styles } from './ui';
 
 const DAY = 86_400_000;
 
@@ -28,12 +28,12 @@ function NavLink({ item }: { item: NavItem }) {
         const { hovered, pressed } = state as typeof state & { hovered?: boolean };
         return [
         { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1, borderColor: 'transparent' },
-        active && { backgroundColor: 'rgba(139,92,246,0.22)', borderColor: 'rgba(139,92,246,0.55)', ...glow(0.35) },
+        active && { backgroundColor: colors.navActiveBg, borderColor: colors.navActiveBorder },
         !active && (hovered || pressed) && { backgroundColor: colors.surface },
         ];
       }}>
       <Ionicons name={item.icon} size={22} color={active ? colors.text : colors.muted} />
-      <Text style={{ flex: 1, color: active ? colors.text : '#D9D3E6', fontSize: 16, fontWeight: active ? '800' : '600' }}>{item.label}</Text>
+      <Text style={{ flex: 1, color: active ? colors.text : colors.navText, fontSize: 16, fontWeight: active ? '800' : '600' }}>{item.label}</Text>
       {item.badge ? (
         <View style={{ minWidth: 22, height: 22, borderRadius: 11, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }}>
           <Text style={{ color: colors.onAccent, fontSize: 11, fontWeight: '900' }}>{item.badge > 99 ? '99+' : item.badge}</Text>
@@ -56,7 +56,7 @@ export function Sidebar() {
     { label: 'Configurações', icon: 'settings-outline', href: '/perfil', match: (p) => p.startsWith('/perfil') },
   ];
   return (
-    <View style={{ width: 290, borderRightWidth: 1, borderRightColor: colors.border, backgroundColor: 'rgba(11,9,17,0.85)' }}>
+    <View style={{ width: 290, borderRightWidth: 1, borderRightColor: colors.border, backgroundColor: colors.glass }}>
       <ScrollView contentContainerStyle={{ padding: 22, gap: 22, flexGrow: 1 }}>
         <Pressable onPress={() => router.push('/')} accessibilityRole="link" accessibilityLabel="Campus, início" style={[styles.row, { gap: 14 }]}>
           <CampusLogo size={58} />
@@ -86,10 +86,10 @@ export function Sidebar() {
 function InviteCard() {
   return (
     <Pressable onPress={() => router.push('/perfil')} accessibilityRole="link" accessibilityLabel="Convidar amigos para o Campus"
-      style={{ borderRadius: radius.lg, padding: 18, gap: 6, backgroundColor: '#1D1430', borderWidth: 1, borderColor: 'rgba(139,92,246,0.45)', overflow: 'hidden' }}>
-      <View style={{ position: 'absolute', right: -30, top: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(139,92,246,0.35)', ...glow(2) }} />
+      style={{ borderRadius: radius.lg, padding: 18, gap: 6, backgroundColor: colors.inviteBg, borderWidth: 1, borderColor: colors.navActiveBorder, overflow: 'hidden' }}>
+      <BrandWatermark size={150} opacity={0.18} style={{ right: -36, top: -30 }} />
       <Text style={{ color: colors.text, fontSize: 20, fontWeight: '900' }}>Campus</Text>
-      <Text style={[styles.body, { color: '#E4DEF0' }]}>Mais que uma rede,{'\n'}a sua turma.</Text>
+      <Text style={styles.body}>Mais que uma rede,{'\n'}a sua turma.</Text>
       <View style={[styles.row, { justifyContent: 'space-between', marginTop: 4 }]}>
         <Text style={[styles.label, { color: colors.accentSoft }]}>Convide amigos</Text>
         <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', ...glow(0.8) }}>
@@ -200,12 +200,13 @@ export function RightRail() {
   );
 }
 
-/** Brilhos suaves de fundo (violeta e magenta), como no modelo, sem fotos. */
+/** Fundo do computador: brilho suave e o logo do Campus bem apagado. */
 export function BackgroundGlow() {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
-      <View style={{ position: 'absolute', top: -120, left: 120, width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(139,92,246,0.10)', boxShadow: '0 0 220px 160px rgba(139,92,246,0.10)' }} />
-      <View style={{ position: 'absolute', bottom: -160, right: -60, width: 300, height: 300, borderRadius: 150, backgroundColor: 'rgba(225,29,72,0.10)', boxShadow: '0 0 260px 180px rgba(225,29,72,0.10)' }} />
+      <View style={{ position: 'absolute', top: -140, left: 160, width: 240, height: 240, borderRadius: 120, backgroundColor: `rgba(${colors.glowRgb},0.06)`, boxShadow: `0 0 220px 150px rgba(${colors.glowRgb},0.07)` }} />
+      {/* O logo do Campus, grande e apagado, ao fundo (como a marca d'água do modelo). */}
+      <BrandWatermark size={760} opacity={themeMode() === 'light' ? 0.05 : 0.07} style={{ right: -170, bottom: -170 }} />
     </View>
   );
 }

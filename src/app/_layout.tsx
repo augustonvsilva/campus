@@ -7,7 +7,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { BackgroundGlow, RightRail, Sidebar, TopBar } from '@/components/shell';
 import { WIDE } from '@/components/ui';
 import { isModerator, StoreProvider, useStore } from '@/lib/store';
-import { colors } from '@/theme';
+import { colors, themeMode } from '@/theme';
 
 /** Largura máxima da coluna de conteúdo (feed e telas). */
 const MAX_WIDTH = 760;
@@ -18,8 +18,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StoreProvider>
-        <StatusBar style="light" />
-        <Shell />
+        <ThemedRoot />
       </StoreProvider>
     </SafeAreaProvider>
   );
@@ -29,6 +28,17 @@ export default function RootLayout() {
  * Celular: só a pilha de telas. Computador (logado): menu lateral, barra superior,
  * coluna central e, em telas bem largas, a coluna da direita.
  */
+/** Remonta tudo quando o tema muda (as cores são lidas na hora de desenhar). */
+function ThemedRoot() {
+  const { themeKey } = useStore();
+  return (
+    <View key={themeKey} style={{ flex: 1 }}>
+      <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
+      <Shell />
+    </View>
+  );
+}
+
 function Shell() {
   const { width } = useWindowDimensions();
   const { session } = useStore();
@@ -36,7 +46,7 @@ function Shell() {
 
   if (!wide) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', backgroundColor: width > 640 ? '#07060B' : colors.bg }}>
+      <View style={{ flex: 1, alignItems: 'center', backgroundColor: width > 640 ? colors.wideBg : colors.bg }}>
         <View style={[{ flex: 1, width: '100%', maxWidth: 640, backgroundColor: colors.bg }, width > 640 && { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border }]}>
           <RootStack />
           <ErrorBanner />

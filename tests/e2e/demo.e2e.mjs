@@ -298,6 +298,22 @@ await check('perfil: convites', async () => {
   await shot('10-perfil');
 });
 
+await check('aparência: tema claro e volta ao escuro', async () => {
+  await page.goto(BASE + '/perfil');
+  await visible('Aparência');
+  const bgIs = (rgb) => page.evaluate((c) => [...document.querySelectorAll('div')].some((d) => getComputedStyle(d).backgroundColor === c), rgb);
+  await page.getByText('Claro', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Aparência');
+  if (!(await bgIs('rgb(244, 244, 246)'))) throw new Error('fundo claro não aplicado');
+  await shot('10b-tema-claro');
+  await page.reload();
+  await visible('Aparência');
+  if (!(await bgIs('rgb(244, 244, 246)'))) throw new Error('tema claro não persistiu após recarregar');
+  await page.getByText('Escuro', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Aparência');
+  if (!(await bgIs('rgb(10, 10, 13)'))) throw new Error('não voltou ao escuro');
+});
+
 await check('perfil: foto (recorte, persistência e remoção)', async () => {
   // Imagem de origem retangular (300×200), gerada a partir da própria tela.
   const src = `${SHOTS}/avatar-origem.png`;

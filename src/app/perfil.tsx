@@ -226,6 +226,28 @@ function DeleteAccountSection() {
   );
 }
 
+/** Aparência: tema escuro, claro ou o mesmo do aparelho. */
+function AppearanceSection() {
+  const { actions, themePref } = useStore();
+  const options = [
+    { id: 'dark' as const, label: 'Escuro', icon: 'moon-outline' as const },
+    { id: 'light' as const, label: 'Claro', icon: 'sunny-outline' as const },
+    { id: 'system' as const, label: 'Sistema', icon: 'phone-portrait-outline' as const },
+  ];
+  return (
+    <Section title="Aparência">
+      <Card>
+        <ChipRow>
+          {options.map((o) => (
+            <Chip key={o.id} label={o.label} icon={o.icon} active={themePref === o.id} onPress={() => actions.setTheme(o.id)} />
+          ))}
+        </ChipRow>
+        <Text style={styles.hint}>{'"Sistema" acompanha o modo claro ou escuro do seu celular ou computador. Vale para este aparelho.'}</Text>
+      </Card>
+    </Section>
+  );
+}
+
 function InviteSection() {
   const { actions, invites } = useStore();
   const me = useMe();
@@ -362,6 +384,8 @@ export default function Perfil() {
       ) : null}
 
       <PasswordSection />
+
+      <AppearanceSection />
 
       <Section title="Privacidade">
         <Card>

@@ -86,7 +86,7 @@ export function PostCard({ post, linked = true, showGroup = true }: { post: Post
                 accessibilityLabel={`Votar em ${o.label}`}
                 style={{ borderRadius: radius.md, borderWidth: 1, borderColor: mine ? colors.accent : colors.border, overflow: 'hidden' }}>
                 {myVote ? (
-                  <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${pct}%`, backgroundColor: mine ? 'rgba(139,92,246,0.25)' : colors.surface2 }} />
+                  <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${pct}%`, backgroundColor: mine ? colors.pollFill : colors.surface2 }} />
                 ) : null}
                 <View style={[styles.row, { paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'space-between' }]}>
                   <Text style={[styles.body, { flex: 1 }]}>{o.label}</Text>

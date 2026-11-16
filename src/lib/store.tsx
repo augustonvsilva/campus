@@ -6,9 +6,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { Appearance, AppState } from 'react-native';
 
-import { avatarColors } from '@/theme';
+import { applyTheme, avatarColors, resolveTheme, type ThemePreference } from '@/theme';
 import { deriveDemoActivity } from './activity';
 import { ACTIVE_COMMUNITY, isInstitutionalEmail } from './community';
 import { handleProblem, normalizeHandle, passwordProblem } from './handle';
@@ -32,8 +32,10 @@ const PREFS_KEY = 'campus:prefs:v1';
 interface Prefs {
   activitySeenAt: Record<ID, number>;
   onboarded: Record<ID, boolean>;
+  /** Aparência: escuro, claro ou seguir o sistema (vale para o aparelho, não para a conta). */
+  theme: ThemePreference;
 }
-const defaultPrefs: Prefs = { activitySeenAt: {}, onboarded: {} };
+const defaultPrefs: Prefs = { activitySeenAt: {}, onboarded: {}, theme: 'dark' };
 const C = ACTIVE_COMMUNITY.id;
 
 interface State {
@@ -224,12 +226,28 @@ function useCampusState() {
   }, [load]);
 
   // ── Preferências do aparelho ──
+  // O tema é aplicado antes da primeira tela aparecer (o app só renderiza com prefsReady).
+  const [themeKey, setThemeKey] = useState(0);
   useEffect(() => {
     AsyncStorage.getItem(PREFS_KEY)
-      .then((raw) => { if (raw) setPrefs({ ...defaultPrefs, ...(JSON.parse(raw) as Partial<Prefs>) }); })
+      .then((raw) => {
+        if (!raw) return;
+        const saved = { ...defaultPrefs, ...(JSON.parse(raw) as Partial<Prefs>) };
+        applyTheme(resolveTheme(saved.theme));
+        setPrefs(saved);
+      })
       .catch(() => {})
       .finally(() => setPrefsReady(true));
   }, []);
+  // "Seguir o sistema": acompanha a troca de claro/escuro do aparelho.
+  useEffect(() => {
+    if (prefs.theme !== 'system') return;
+    const sub = Appearance.addChangeListener(() => {
+      applyTheme(resolveTheme('system'));
+      setThemeKey((k) => k + 1);
+    });
+    return () => sub.remove();
+  }, [prefs.theme]);
   useEffect(() => {
     if (prefsReady) AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs)).catch(() => {});
   }, [prefs, prefsReady]);
@@ -296,7 +314,7 @@ function useCampusState() {
       return handle;
     };
 
-    const setPref = <K extends keyof Prefs>(key: K, value: Prefs[K][ID]) => {
+    const setPref = <K extends 'activitySeenAt' | 'onboarded'>(key: K, value: Prefs[K][ID]) => {
       const m = me();
       if (m) setPrefs((p) => ({ ...p, [key]: { ...p[key], [m]: value } }));
     };
@@ -307,6 +325,12 @@ function useCampusState() {
       markActivitySeen: () => setPref('activitySeenAt', Date.now()),
       /** Conclui a tela de boas-vindas. */
       finishOnboarding: () => setPref('onboarded', true),
+      /** Troca a aparência (escuro, claro ou sistema) e redesenha o app. */
+      setTheme(pref: ThemePreference) {
+        applyTheme(resolveTheme(pref));
+        setPrefs((p) => ({ ...p, theme: pref }));
+        setThemeKey((k) => k + 1);
+      },
       checkHandle,
       refresh,
 
@@ -851,7 +875,7 @@ function useCampusState() {
 
   return {
     ...state, hydrated: hydrated && prefsReady, error, refreshing, me, actions, isVisible,
-    activity, activitySeenAt, unreadActivity, onboarded, conversations, unreadMessages, messagesEnabled: MESSAGES_ENABLED,
+    activity, activitySeenAt, unreadActivity, onboarded, themePref: prefs.theme, themeKey, conversations, unreadMessages, messagesEnabled: MESSAGES_ENABLED,
     community: ACTIVE_COMMUNITY as Community,
     backend: SUPABASE_ENABLED ? ('supabase' as const) : ('demo' as const),
   };
