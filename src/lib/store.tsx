@@ -10,7 +10,7 @@ import { Appearance, AppState } from 'react-native';
 
 import { applyTheme, avatarColors, resolveTheme, type ThemePreference } from '@/theme';
 import { deriveDemoActivity } from './activity';
-import { ACTIVE_COMMUNITY, isInstitutionalEmail } from './community';
+import { activeCommunity, COMMUNITY_PREF_KEY, communityFromLink, isInstitutionalEmail, setActiveCommunity } from './community';
 import { handleProblem, normalizeHandle, passwordProblem } from './handle';
 import type { PreparedImage } from './images';
 import * as remote from './remote';
@@ -26,8 +26,8 @@ import type {
 export { SUPABASE_ENABLED };
 export type LocalImage = remote.LocalImage;
 
-// Dados de demonstração separados por comunidade (o Mackenzie mantém a chave original).
-const STORAGE_KEY = ACTIVE_COMMUNITY.id === 'mackenzie' ? 'campus:state:v3' : `campus:state:v3:${ACTIVE_COMMUNITY.id}`;
+// Dados de demonstração separados por universidade (o Mackenzie mantém a chave original).
+const storageKey = (communityId: ID) => (communityId === 'mackenzie' ? 'campus:state:v3' : `campus:state:v3:${communityId}`);
 /** Preferências deste aparelho (valem nos dois modos): última visita à atividade e boas-vindas concluídas. */
 const PREFS_KEY = 'campus:prefs:v1';
 
@@ -38,7 +38,6 @@ interface Prefs {
   theme: ThemePreference;
 }
 const defaultPrefs: Prefs = { activitySeenAt: {}, onboarded: {}, theme: 'dark' };
-const C = ACTIVE_COMMUNITY.id;
 
 interface State {
   session: { userId: ID } | null;
@@ -94,6 +93,27 @@ const emptyState = (): State => ({
 
 const demoState = (): State => ({ ...emptyState(), ...seedData() });
 
+/** Demo: dados salvos no aparelho para a universidade em uso (ou os de exemplo, na primeira vez). */
+async function readDemo(communityId: ID): Promise<State> {
+  const raw = await AsyncStorage.getItem(storageKey(communityId)).catch(() => null);
+  if (!raw) return demoState();
+  try {
+    const saved = JSON.parse(raw) as Partial<State>;
+    // Dados salvos por versões anteriores: saídas ainda sem conversa.
+    if (saved.rides) saved.rides = saved.rides.map((r) => ({ ...r, comments: r.comments ?? [] }));
+    saved.messages = saved.messages ?? [];
+    saved.tickets = saved.tickets ?? [];
+    // Eventos de simulação adicionados depois: entram também em quem já tinha dados salvos.
+    if (saved.events) {
+      const missing = demoState().events.filter((e) => e.id.startsWith('sim-') && !saved.events!.some((x) => x.id === e.id));
+      saved.events = [...missing, ...saved.events];
+    }
+    return { ...demoState(), ...saved };
+  } catch {
+    return demoState();
+  }
+}
+
 export const newId = () => Crypto.randomUUID();
 const toggleIn = (list: ID[], id: ID) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : 'Algo deu errado. Tente de novo.');
@@ -101,7 +121,7 @@ const errorMessage = (e: unknown) => (e instanceof Error ? e.message : 'Algo deu
 function inviteCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O/1/I
   const bytes = Crypto.getRandomBytes(5);
-  return ACTIVE_COMMUNITY.invitePrefix + '-' + Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+  return activeCommunity().invitePrefix + '-' + Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
 }
 
 /** Demo: remove a conta e o que ela criou, com as mesmas regras do banco (migration 0007). */
@@ -161,6 +181,8 @@ const demoHash = (userId: ID, password: string) =>
 
 function useCampusState() {
   const [state, setState] = useState<State>(SUPABASE_ENABLED ? emptyState : demoState);
+  /** Universidade em uso: escolhida na entrada e, depois do login, a da conta. */
+  const [communityId, setCommunityId] = useState<ID>(() => activeCommunity().id);
   const [hydrated, setHydrated] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(defaultPrefs);
   const [prefsReady, setPrefsReady] = useState(false);
@@ -186,6 +208,8 @@ function useCampusState() {
         // A atividade não pode derrubar o app (ex.: migration 0008 ainda não aplicada).
         remote.fetchActivity().catch(() => [] as Activity[]),
       ]);
+      const mine = snap.users?.[userId]?.communityId;
+      if (mine) setCommunityId(setActiveCommunity(mine).id);
       setState((s) => ({ ...s, ...snap, activity, session: { userId } }));
     } catch (e) {
       setState((s) => ({ ...s, session: { userId } }));
@@ -207,27 +231,27 @@ function useCampusState() {
 
   // ── Inicialização ──
   useEffect(() => {
+    // Universidade: a do link (?comunidade=…) ou a última escolhida neste aparelho.
+    const chosen = AsyncStorage.getItem(COMMUNITY_PREF_KEY)
+      .catch(() => null)
+      .then((saved) => setActiveCommunity(communityFromLink() ?? saved).id);
     if (!SUPABASE_ENABLED || !supabase) {
-      AsyncStorage.getItem(STORAGE_KEY)
-        .then((raw) => {
-          if (!raw) return;
-          const saved = JSON.parse(raw) as Partial<State>;
-          // Dados salvos por versões anteriores: saídas ainda sem conversa.
-          if (saved.rides) saved.rides = saved.rides.map((r) => ({ ...r, comments: r.comments ?? [] }));
-          saved.messages = saved.messages ?? [];
-          saved.tickets = saved.tickets ?? [];
-          // Eventos de simulação adicionados depois: entram também em quem já tinha dados salvos.
-          if (saved.events) {
-            const missing = demoState().events.filter((e) => e.id.startsWith('sim-') && !saved.events!.some((x) => x.id === e.id));
-            saved.events = [...missing, ...saved.events];
-          }
-          setState({ ...demoState(), ...saved });
+      chosen
+        .then(async (id) => {
+          const next = await readDemo(id);
+          setCommunityId(id);
+          setState(next);
         })
         .catch(() => {})
         .finally(() => setHydrated(true));
       return;
     }
-    supabase.auth.getSession()
+    const client = supabase;
+    chosen
+      .then((id) => {
+        setCommunityId(id);
+        return client.auth.getSession();
+      })
       .then(async ({ data }) => {
         if (data.session) await load(data.session.user.id);
       })
@@ -271,8 +295,12 @@ function useCampusState() {
   // se o app (ou a aba do navegador) fechar logo depois de uma ação.
   useEffect(() => {
     if (SUPABASE_ENABLED || !hydrated) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
-  }, [state, hydrated]);
+    AsyncStorage.setItem(storageKey(communityId), JSON.stringify(state)).catch(() => {});
+  }, [state, hydrated, communityId]);
+  // Lembra a universidade escolhida para a próxima abertura.
+  useEffect(() => {
+    if (hydrated) AsyncStorage.setItem(COMMUNITY_PREF_KEY, communityId).catch(() => {});
+  }, [communityId, hydrated]);
 
   // ── Tempo real + recarga ao voltar para o app (só Supabase) ──
   const sessionUser = state.session?.userId;
@@ -347,6 +375,18 @@ function useCampusState() {
       },
       checkHandle,
       refresh,
+      /** Tela de entrada: escolhe a universidade (cursos, convites, e-mail e, na demo, os dados de exemplo). */
+      async chooseCommunity(id: ID) {
+        if (stateRef.current.session || id === activeCommunity().id) return;
+        const c = setActiveCommunity(id);
+        if (SUPABASE_ENABLED) {
+          setCommunityId(c.id);
+          return;
+        }
+        const next = await readDemo(c.id);
+        setCommunityId(c.id);
+        setState(next);
+      },
 
       // ── Conta ──
       /** Retorna true quando é preciso digitar o código enviado por e-mail (modo Supabase). */
@@ -383,12 +423,12 @@ function useCampusState() {
         }
         const code = input.inviteCode.trim().toUpperCase();
         const memberInvite = s.invites.find((i) => i.code === code && i.uses < i.maxUses);
-        if (!ACTIVE_COMMUNITY.inviteCodes.includes(code) && !memberInvite) throw new Error('Convite inválido ou esgotado.');
+        if (!activeCommunity().inviteCodes.includes(code) && !memberInvite) throw new Error('Convite inválido ou esgotado.');
         const id = newId();
         // Entrou direto com o e-mail institucional (e ele não verificou outra conta): já nasce verificado.
         const institutional = isInstitutionalEmail(email) && !Object.values(s.users).some((u) => u.institutionalEmail === email);
         const user: User = {
-          id, communityId: C, name: input.name.trim(), handle, email,
+          id, communityId: activeCommunity().id, name: input.name.trim(), handle, email,
           course: input.course.trim(), semester: input.semester, interests: [],
           color: avatarColors[Crypto.getRandomBytes(1)[0]! % avatarColors.length]!,
           verification: institutional ? 'email' : 'pending',
@@ -578,7 +618,7 @@ function useCampusState() {
         const email = rawEmail.trim().toLowerCase();
         if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Digite um e-mail válido.');
         if (!isInstitutionalEmail(email)) {
-          throw new Error(`Use um e-mail institucional (@${ACTIVE_COMMUNITY.emailDomains.join(' ou @')}).`);
+          throw new Error(`Use um e-mail institucional (@${activeCommunity().emailDomains.join(' ou @')}).`);
         }
         if (SUPABASE_ENABLED) {
           await remote.requestInstitutionalCode(email);
@@ -624,7 +664,7 @@ function useCampusState() {
         if (!m) return '';
         const now = Date.now();
         const post: Post = {
-          id: newId(), communityId: C, authorId: m, groupId: input.groupId, text: input.text.trim(), createdAt: now,
+          id: newId(), communityId: activeCommunity().id, authorId: m, groupId: input.groupId, text: input.text.trim(), createdAt: now,
           expiresAt: input.ttlHours ? now + input.ttlHours * HOUR : undefined,
           imageUrl: input.image?.uri,
           poll: input.pollOptions?.length ? input.pollOptions.map((label) => ({ id: newId(), label, votes: [] })) : undefined,
@@ -707,7 +747,7 @@ function useCampusState() {
       }) {
         const m = me();
         if (!m) return '';
-        const event: CampusEvent = { ...input, id: newId(), communityId: C, createdBy: m, interested: [], going: [m] };
+        const event: CampusEvent = { ...input, id: newId(), communityId: activeCommunity().id, createdBy: m, interested: [], going: [m] };
         setState((s) => ({ ...s, events: [...s.events, event] }));
         sync((mm) => remote.addEvent(mm, event));
         return event.id;
@@ -717,7 +757,7 @@ function useCampusState() {
       addBora(input: { activity: string; startsAt: number; meetingPoint: string; visibility: BoraVisibility; capacity?: number }) {
         const m = me();
         if (!m) return '';
-        const bora: Bora = { ...input, id: newId(), communityId: C, authorId: m, participants: [m], comments: [], createdAt: Date.now() };
+        const bora: Bora = { ...input, id: newId(), communityId: activeCommunity().id, authorId: m, participants: [m], comments: [], createdAt: Date.now() };
         setState((s) => ({ ...s, boras: [bora, ...s.boras] }));
         sync((mm) => remote.addBora(mm, bora));
         return bora.id;
@@ -754,7 +794,7 @@ function useCampusState() {
           throw new Error('Já existe uma comunidade com esse nome.');
         }
         const group: Group = {
-          id: newId(), communityId: C, name, kind: input.kind, description: input.description.trim(), color: input.color,
+          id: newId(), communityId: activeCommunity().id, name, kind: input.kind, description: input.description.trim(), color: input.color,
           verified: false, createdBy: m, createdAt: Date.now(), members: { [m]: 'admin' },
         };
         setState((s) => ({ ...s, groups: [...s.groups, group] }));
@@ -814,7 +854,7 @@ function useCampusState() {
       addRide(input: Omit<Ride, 'id' | 'communityId' | 'reservations' | 'createdBy' | 'createdAt' | 'cancelled' | 'comments'> & { comments?: Comment[] }) {
         const m = me();
         if (!m) return '';
-        const ride: Ride = { ...input, comments: [], id: newId(), communityId: C, reservations: [], createdBy: m, createdAt: Date.now() };
+        const ride: Ride = { ...input, comments: [], id: newId(), communityId: activeCommunity().id, reservations: [], createdBy: m, createdAt: Date.now() };
         setState((s) => ({ ...s, rides: [...s.rides, ride] }));
         sync((mm) => remote.addRide(mm, ride));
         return ride.id;
@@ -934,7 +974,8 @@ function useCampusState() {
   return {
     ...state, hydrated: hydrated && prefsReady, error, refreshing, me, actions, isVisible,
     activity, activitySeenAt, unreadActivity, onboarded, themePref: prefs.theme, themeKey, conversations, unreadMessages, messagesEnabled: MESSAGES_ENABLED, ticketsEnabled: TICKETS_ENABLED,
-    community: ACTIVE_COMMUNITY as Community,
+    community: activeCommunity() as Community,
+    communityId,
     backend: SUPABASE_ENABLED ? ('supabase' as const) : ('demo' as const),
   };
 }
@@ -955,7 +996,7 @@ export function useStore() {
 }
 
 const SIGNED_OUT: User = {
-  id: '__signed_out__', communityId: C, name: 'Visitante', handle: 'visitante',
+  id: '__signed_out__', communityId: activeCommunity().id, name: 'Visitante', handle: 'visitante',
   interests: [], color: '#9AA0AE', verification: 'pending', role: 'member', joinedAt: 0,
 };
 

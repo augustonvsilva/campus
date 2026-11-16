@@ -4,12 +4,7 @@
 -- (a política "comunidades ativas são públicas" esconde) e, sem convites, ninguém consegue
 -- entrar nela (o cadastro exige um convite ligado à comunidade).
 --
--- Para ACORDAR no lançamento:
---   1) update public.communities set is_active = true where id = 'puc-sp';
---   2) insert into public.invites (code, community_id, max_uses)
---        values ('PUC-FUNDADORES', 'puc-sp', 50);   -- convite inicial (ajuste o limite)
---   3) no app: status 'ativa' em src/lib/community.ts e EXPO_PUBLIC_COMMUNITY=puc-sp no build
---      (ou um build próprio para a PUC).
+-- Para ACORDAR: rode a 0010_puc_ativa.sql (liga a comunidade e cria o convite PUC-FUNDADORES).
 --
 -- TODO: confirmar com a instituição os domínios de e-mail usados por alunos.
 

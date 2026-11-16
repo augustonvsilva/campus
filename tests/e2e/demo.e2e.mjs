@@ -662,11 +662,13 @@ await check('excluir conta (confirmação pelo nome de usuário)', async () => {
   await visible('Não encontramos uma conta com esse e-mail neste aparelho.');
 });
 
-await check('PUC-SP dormindo: modo teste com cadastro, cursos e capa próprios', async () => {
-  await page.goto(BASE + '/?comunidade=puc-sp');
-  await visible('Teste: PUC-SP (dormindo)');
-  await visible('sem vínculo oficial com a Pontifícia Universidade Católica de São Paulo', { exact: false });
-  await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('PUC2026');
+await check('PUC-SP: escolher a universidade na entrada, cadastro com cursos e capa próprios', async () => {
+  await page.goto(BASE);
+  await visible('Sua universidade');
+  await page.getByText('PUC-SP', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('PUC-SP · ACESSO POR CONVITE');
+  await visible('Pontifícia Universidade Católica de São Paulo', { exact: false });
+  await page.getByPlaceholder('Ex.: PUC-7KQ2P').fill('PUC2026');
   await page.getByPlaceholder('Como você quer aparecer').fill('Lia Prado');
   await page.getByPlaceholder('seu@email.com').fill('lia@pucsp.edu.br');
   await page.getByRole('switch').nth(0).click();
@@ -676,16 +678,29 @@ await check('PUC-SP dormindo: modo teste com cadastro, cursos e capa próprios',
   await page.getByPlaceholder('Buscar curso').fill('jogos');
   await page.getByText('Jogos Digitais', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await pickSemester('2º');
+  await shot('15a-entrada-puc');
   await page.getByText('Entrar no Campus').click();
   await visible('Que bom ter você aqui, Lia!');
   await page.getByText('Começar', { exact: true }).click();
   await visible('PUC-SP', { exact: true });
-  await shot('15-puc-teste');
+  await shot('15-puc');
   await page.goto(BASE + '/perfil');
+  await visible('@lia.prado · PUC-SP · Jogos Digitais (2º sem.)', { exact: false });
   await visible('Pátio da Cruz, Campus Monte Alegre', { exact: false });
-  await page.getByText('Sair do teste').locator('visible=true').first().click();
-  await page.waitForURL((u) => !u.search.includes('puc-sp'));
-  await page.getByText('Teste: PUC-SP', { exact: false }).waitFor({ state: 'detached', timeout: 8000 });
+});
+
+await check('PUC-SP e Mackenzie têm dados separados (reabrir lembra a universidade)', async () => {
+  await page.reload();
+  await visible('@lia.prado · PUC-SP', { exact: false });
+  await page.getByText('Sair', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('PUC-SP · ACESSO POR CONVITE');
+  await page.getByText('Mackenzie', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('MACKENZIE · ACESSO POR CONVITE');
+  await page.getByText('Já tenho conta').click();
+  await page.getByPlaceholder('seu@email.com').fill('lia@pucsp.edu.br');
+  await page.getByPlaceholder('Sua senha').fill('puc2026sp');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Não encontramos uma conta com esse e-mail neste aparelho.');
 });
 
 console.log(results.join('\n'));

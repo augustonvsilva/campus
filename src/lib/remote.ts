@@ -1,6 +1,6 @@
 // Camada de acesso ao Supabase: leitura da comunidade e operações de escrita.
 // Converte entre o formato do banco (snake_case, ISO) e os tipos do app.
-import { ACTIVE_COMMUNITY } from './community';
+import { activeCommunity } from './community';
 import { supabase } from './supabase';
 import { DAY } from './time';
 import type {
@@ -10,7 +10,8 @@ import type {
 } from './types';
 import { avatarColors } from '@/theme';
 
-const C = ACTIVE_COMMUNITY.id;
+/** Universidade em uso (muda com o app aberto: escolha na entrada ou conta logada). */
+const cid = () => activeCommunity().id;
 
 function sb() {
   if (!supabase) throw new Error('Supabase não configurado');
@@ -44,7 +45,7 @@ export function friendlyError(message: string): string {
   if (m.includes('pelo menos um admin')) return 'A comunidade precisa de pelo menos um admin. Promova alguém antes de sair.';
   if (m.includes('groups_community_id_name_key') || m.includes('duplicate key') && m.includes('groups')) return 'Já existe uma comunidade com esse nome.';
   if (m.includes('row-level security') || m.includes('permission denied') || m.includes('sem permissão')) return 'Você não tem permissão para fazer isso.';
-  if (m.includes('domínio não institucional')) return `Use um e-mail institucional (@${ACTIVE_COMMUNITY.emailDomains.join(' ou @')}).`;
+  if (m.includes('domínio não institucional')) return `Use um e-mail institucional (@${activeCommunity().emailDomains.join(' ou @')}).`;
   if (m.includes('e-mail institucional já usado')) return 'Esse e-mail institucional já confirmou outra conta. Se ela não é sua, fale com a equipe.';
   if (m.includes('aguarde para reenviar')) return 'Espere 1 minuto para pedir um novo código.';
   if (m.includes('limite diário de códigos')) return 'Você pediu muitos códigos hoje. Tente de novo amanhã.';
@@ -334,7 +335,7 @@ async function signAll(bucket: Bucket, paths: (string | null | undefined)[]) {
 async function upload(bucket: Bucket, folderUser: ID, id: string, image: LocalImage) {
   const type = image.mimeType ?? 'image/jpeg';
   const ext = type.split('/')[1] ?? 'jpg';
-  const path = `${C}/${folderUser}/${id}.${ext}`;
+  const path = `${cid()}/${folderUser}/${id}.${ext}`;
   const body = await (await fetch(image.uri)).arrayBuffer();
   must(await sb().storage.from(bucket).upload(path, body, { contentType: type, upsert: false }));
   return path;
@@ -349,7 +350,7 @@ export async function signedEvidenceUrl(path: string) {
 export async function addPost(me: ID, post: Post, image?: LocalImage) {
   const image_path = image ? await upload('post-images', me, post.id, image) : null;
   must(await sb().from('posts').insert({
-    id: post.id, community_id: C, author_id: me, body: post.text,
+    id: post.id, community_id: cid(), author_id: me, body: post.text,
     expires_at: post.expiresAt ? iso(post.expiresAt) : null, image_path, group_id: post.groupId ?? null,
   }));
   if (post.poll?.length) {
@@ -371,7 +372,7 @@ export async function setVote(me: ID, postId: ID, optionId: ID | null) {
 
 export async function addComment(me: ID, target: CommentTarget, targetId: ID, comment: Comment) {
   must(await sb().from('comments').insert({
-    id: comment.id, community_id: C, author_id: me, body: comment.text,
+    id: comment.id, community_id: cid(), author_id: me, body: comment.text,
     post_id: target === 'post' ? targetId : null, bora_id: target === 'bora' ? targetId : null,
     ride_id: target === 'ride' ? targetId : null,
   }));
@@ -399,7 +400,7 @@ export async function setAttendance(me: ID, eventId: ID, status: 'interested' | 
 
 export async function addEvent(me: ID, e: CampusEvent) {
   must(await sb().from('events').insert({
-    id: e.id, community_id: C, title: e.title, category: e.category, starts_at: iso(e.startsAt), ends_at: iso(e.endsAt),
+    id: e.id, community_id: cid(), title: e.title, category: e.category, starts_at: iso(e.startsAt), ends_at: iso(e.endsAt),
     location: e.location, description: e.description, organizer: e.organizer, ticket_url: e.ticketUrl ?? null, created_by: me,
     group_id: e.groupId ?? null,
   }));
@@ -408,7 +409,7 @@ export async function addEvent(me: ID, e: CampusEvent) {
 
 export async function addBora(me: ID, b: Bora) {
   must(await sb().from('boras').insert({
-    id: b.id, community_id: C, author_id: me, activity: b.activity, starts_at: iso(b.startsAt),
+    id: b.id, community_id: cid(), author_id: me, activity: b.activity, starts_at: iso(b.startsAt),
     meeting_point: b.meetingPoint, visibility: b.visibility, capacity: b.capacity ?? null,
   }));
   must(await sb().from('bora_participants').insert({ bora_id: b.id, user_id: me }));
@@ -427,7 +428,7 @@ export async function addRecommendation(me: ID, placeId: ID, rec: Comment) {
 
 export async function report(me: ID, r: Pick<Report, 'targetType' | 'targetId' | 'reason' | 'details'>) {
   must(await sb().from('reports').insert({
-    community_id: C, reporter_id: me, target_type: r.targetType, target_id: r.targetId, reason: r.reason, details: r.details ?? null,
+    community_id: cid(), reporter_id: me, target_type: r.targetType, target_id: r.targetId, reason: r.reason, details: r.details ?? null,
   }));
 }
 
@@ -463,7 +464,7 @@ export async function updateSettings(me: ID, s: Settings) {
 }
 
 export async function createInvite(me: ID, invite: Invite) {
-  must(await sb().from('invites').insert({ code: invite.code, community_id: C, created_by: me, max_uses: invite.maxUses }));
+  must(await sb().from('invites').insert({ code: invite.code, community_id: cid(), created_by: me, max_uses: invite.maxUses }));
 }
 
 export async function requestVerification(me: ID, req: VerificationRequest, image: LocalImage) {
@@ -481,7 +482,7 @@ export async function setFollow(me: ID, userId: ID, on: boolean) {
 export async function createGroup(me: ID, g: Group) {
   // O trigger do banco adiciona quem criou como admin.
   must(await sb().from('groups').insert({
-    id: g.id, community_id: C, name: g.name, kind: g.kind, description: g.description, color: g.color, created_by: me,
+    id: g.id, community_id: cid(), name: g.name, kind: g.kind, description: g.description, color: g.color, created_by: me,
   }));
 }
 
@@ -505,7 +506,7 @@ export async function removeMember(groupId: ID, userId: ID) {
 // ───────────────────────── Saídas ─────────────────────────
 export async function addRide(me: ID, r: Ride) {
   must(await sb().from('rides').insert({
-    id: r.id, community_id: C, group_id: r.groupId, event_id: r.eventId ?? null, title: r.title,
+    id: r.id, community_id: cid(), group_id: r.groupId, event_id: r.eventId ?? null, title: r.title,
     departs_at: iso(r.departsAt), departure_point: r.departurePoint, destination: r.destination,
     seats: r.seats ?? null, price: r.price ?? null, notes: r.notes ?? null, pix_key: r.pixKey ?? null, created_by: me,
   }));

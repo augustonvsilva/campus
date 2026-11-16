@@ -23,13 +23,13 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
 | `npm run test:db` | Aplica as migrations num Postgres em memória e roda 177 cenários de segurança: convite, exclusão de conta, edição do próprio conteúdo, central de atividade, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
-| `npm run test:e2e` | 41 fluxos no Chrome headless com o modo demo (precisa do app web rodando em modo demo: sem `.env.local`, ou com `EXPO_PUBLIC_SUPABASE_URL=` vazio) |
+| `npm run test:e2e` | 42 fluxos no Chrome headless com o modo demo (precisa do app web rodando em modo demo: sem `.env.local`, ou com `EXPO_PUBLIC_SUPABASE_URL=` vazio) |
 
 ## Colocar o Supabase no ar
 
 1. Crie um projeto em [supabase.com](https://supabase.com). Sugestão: região **São Paulo (sa-east-1)**, pensando na LGPD.
 2. Aplique o banco, por um destes caminhos:
-   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql`, `0007_excluir_conta.sql`, `0008_engajamento.sql`, `0009_puc_sp.sql` (PUC-SP dormindo; opcional) e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
+   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql`, `0007_excluir_conta.sql`, `0008_engajamento.sql`, `0009_puc_sp.sql`, `0010_puc_ativa.sql` (PUC-SP) e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
    - **CLI:** `npx supabase link --project-ref <ref>` e depois `npx supabase db push`.
 3. Em **Authentication → Email Templates → Magic Link**, inclua `{{ .Token }}` no texto, para o e-mail trazer o código de 6 dígitos. Exemplo: `Seu código do Campus: {{ .Token }}`.
    Em **Authentication → Providers → Email**, defina o tamanho mínimo de senha como 8 (o app já exige 8, com letras e números) e deixe *Secure password change* desligado: a troca de senha no perfil não pede a senha antiga, já que a recuperação é feita por código no e-mail.
@@ -115,16 +115,21 @@ tests/
 
 Todo registro tem `community_id`, e o RLS limita leitura e escrita à comunidade de quem está logado. Os testes de banco garantem que um aluno da PUC não vê nem interage com conteúdo do Mackenzie.
 
-As universidades ficam em `src/lib/community.ts` (`COMMUNITIES`): nome, domínios de e-mail, lista oficial de cursos, prefixo de convite, foto da capa e `status` (`ativa` ou `dormindo`). O app usa a do build (`EXPO_PUBLIC_COMMUNITY`, padrão `mackenzie`).
+As universidades ficam em `src/lib/community.ts` (`COMMUNITIES`): nome, domínios de e-mail, lista oficial de cursos, prefixo de convite, foto da capa e `status` (`ativa` ou `dormindo`).
 
-**PUC-SP (dormindo).** Já está configurada: 33 cursos de pucsp.br/graduacao, e-mail `@pucsp.edu.br` (a confirmar), capa do Pátio da Cruz (CC0) e convites de demonstração `PUC2026` e `FUNDADORES`.
-- **Testar:** no site de demonstração, abra `…/campus/?comunidade=puc-sp`. Uma faixa amarela indica o teste, que vale só naquele navegador. Os dados de demonstração ficam separados dos do Mackenzie. Para voltar, use "Sair do teste" ou `?comunidade=mackenzie`. O teste só funciona no modo demonstração; com o Supabase ligado, o parâmetro é ignorado.
-- **Acordar:**
-  1. No SQL Editor, rode `supabase/migrations/0009_puc_sp.sql`. Ele pode rodar antes: só cadastra a PUC desligada.
-  2. Rode os dois comandos de "acordar" que estão no topo desse arquivo, para ligar a comunidade e criar o convite inicial.
-  3. No app, mude `status` para `ativa` e faça o build com `EXPO_PUBLIC_COMMUNITY=puc-sp`.
+**Escolha da universidade.** Na tela de entrada, o aluno escolhe entre as universidades ativas, hoje Mackenzie e PUC-SP. A escolha muda a lista de cursos, os convites, o domínio de e-mail institucional e a capa.
+- **Depois do login:** vale a universidade da conta.
+- **Na próxima abertura:** o app lembra a última universidade escolhida.
+- **Modo demonstração:** cada universidade tem seus próprios dados, separados.
+- **Link direto:** `…/campus/?comunidade=puc-sp` já abre na PUC-SP.
 
-Para abrir outra universidade, repita o modelo da PUC: um registro em `COMMUNITIES`, uma migration com a linha em `communities` (desligada) e convites na hora de acordar.
+**PUC-SP.** Tem 33 cursos, conforme pucsp.br/graduacao. O e-mail é `@pucsp.edu.br` (a confirmar). A capa é o Pátio da Cruz (CC0). Os convites de demonstração são `PUC2026` e `FUNDADORES`.
+
+**No Supabase:**
+1. Rode `0009_puc_sp.sql`, que cadastra a PUC desligada.
+2. Rode `0010_puc_ativa.sql`, que liga a PUC e cria o convite `PUC-FUNDADORES`.
+
+Para abrir outra universidade, repita o modelo da PUC. Crie um registro em `COMMUNITIES` com `status: 'dormindo'` e uma migration com a linha em `communities` desligada. Quando for lançar, mude para `ativa` e rode a migration que liga a comunidade e cria os convites.
 
 ## Pendências de negócio
 

@@ -1,12 +1,14 @@
 // Dados de demonstração — pessoas, lugares e eventos FICTÍCIOS.
 // Os horários são relativos ao momento em que o app é aberto, para o "Agora" ter conteúdo.
-import { ACTIVE_COMMUNITY } from './community';
+import { activeCommunity } from './community';
 import { at, DAY, HOUR, MIN } from './time';
 import type { Bora, CampusEvent, Group, Place, Post, Report, Ride, User, VerificationRequest } from './types';
 
-const C = ACTIVE_COMMUNITY.id;
+// Universidade dos dados de exemplo: a em uso quando seedData() é chamada.
+let C = activeCommunity().id;
 
 export function seedData(now = Date.now()) {
+  C = activeCommunity().id;
   const user = (id: string, name: string, course: string, semester: string, color: string, interests: string[]): User => ({
     id,
     communityId: C,
@@ -123,7 +125,7 @@ export function seedData(now = Date.now()) {
     ev({
       id: 'e1', title: 'Feira de Estágios', category: 'academico',
       startsAt: now - HOUR, endsAt: now + 3 * HOUR,
-      location: `${ACTIVE_COMMUNITY.mainCampus} — área de convivência`,
+      location: `${activeCommunity().mainCampus} — área de convivência`,
       organizer: 'Centro Acadêmico (exemplo)',
       description: 'Empresas recebendo currículos e conversando com estudantes de todos os cursos. Leve seu currículo impresso ou o QR code do LinkedIn.',
       interested: ['u_felipe', 'u_diego', 'u_eduarda'], going: ['u_felipe'],

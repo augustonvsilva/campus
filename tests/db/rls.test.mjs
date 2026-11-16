@@ -431,9 +431,10 @@ await db.exec('set role anon');
 await db.exec('reset role');
 await expectFail('ninguém entra na PUC-SP dormindo (sem convite)',
   () => newUser('bia@pucsp.edu.br', { name: 'Bia', invite_code: 'PUC-FUNDADORES' }), 'convite');
-// Acordar: exatamente os passos descritos na migration.
-await db.exec(`update communities set is_active = true where id = 'puc-sp';
-               insert into invites (code, community_id, max_uses) values ('PUC-FUNDADORES', 'puc-sp', 50);`);
+// Acordar: migration 0010.
+const sql0010 = readFileSync(`${root}/supabase/migrations/0010_puc_ativa.sql`, 'utf8');
+await expectOk('migrations/0010_puc_ativa.sql', () => db.exec(sql0010));
+await expectOk('0010 pode rodar de novo sem erro', () => db.exec(sql0010));
 await db.exec('set role anon');
 (await rows(`select id from communities where id = 'puc-sp'`)).length === 1
   ? ok('PUC-SP acordada aparece') : bad('PUC-SP acordada não aparece');

@@ -5,7 +5,7 @@
 // retenção (incl. guarda de registros de acesso por 6 meses, art. 15 do Marco Civil) e foro.
 // Os dados descritos aqui refletem o que o app realmente coleta; ao mudar o app, atualize este arquivo.
 
-import { ACTIVE_COMMUNITY } from './community';
+import { ACTIVE_COMMUNITIES } from './community';
 
 /** TODO: preencher antes do lançamento. */
 export const LEGAL = {
@@ -14,8 +14,9 @@ export const LEGAL = {
   updatedAt: '14/11/2026',
 };
 
+const institutions = ACTIVE_COMMUNITIES.map((c) => `a ${c.name}`);
 export const NOT_AFFILIATED =
-  `O Campus é um projeto independente, sem vínculo oficial com a ${ACTIVE_COMMUNITY.name}. ` +
+  `O Campus é um projeto independente, sem vínculo oficial com ${institutions.join(', ')} ou qualquer outra instituição. ` +
   'Nomes de universidades são usados apenas para identificar as comunidades de estudantes.';
 
 export interface LegalSection { heading: string; paragraphs: string[] }

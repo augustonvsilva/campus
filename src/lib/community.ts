@@ -46,15 +46,14 @@ export const MACKENZIE: Community = {
   },
 };
 
-// PUC-SP: configurada e DORMINDO (não aparece para ninguém). Para acordar no lançamento:
-// status 'ativa', EXPO_PUBLIC_COMMUNITY=puc-sp no build e a migration 0009 (is_active + convite).
+// PUC-SP: ativa (escolhida na tela de entrada). No banco: migrations 0009 e 0010.
 // Cursos conforme pucsp.br/graduacao (consultado em 16/11/2026): 33 cursos, sem EAD.
 export const PUC_SP: Community = {
   id: 'puc-sp',
   name: 'Pontifícia Universidade Católica de São Paulo',
   shortName: 'PUC-SP',
   city: 'São Paulo',
-  status: 'dormindo',
+  status: 'ativa',
   invitePrefix: 'PUC',
   mainCampus: 'Campus Monte Alegre',
   // TODO: confirmar com a instituição os domínios usados por alunos.
@@ -83,41 +82,44 @@ export const PUC_SP: Community = {
 
 export const COMMUNITIES: Community[] = [MACKENZIE, PUC_SP];
 
-/** Chave (no navegador) da comunidade escolhida para teste no site de demonstração. */
-const TEST_KEY = 'campus:comunidade-teste';
+/** Universidades que aparecem para escolher no cadastro e no login (status 'ativa'). */
+export const ACTIVE_COMMUNITIES = COMMUNITIES.filter((c) => c.status === 'ativa');
+
+/** Chave (no aparelho) da última universidade escolhida na tela de entrada. */
+export const COMMUNITY_PREF_KEY = 'campus:comunidade';
+
+const byId = (id?: string | null) => ACTIVE_COMMUNITIES.find((c) => c.id === id);
+let current: Community = byId(process.env.EXPO_PUBLIC_COMMUNITY) ?? ACTIVE_COMMUNITIES[0] ?? MACKENZIE;
 
 /**
- * Comunidade deste app. Normal: a do build (EXPO_PUBLIC_COMMUNITY, padrão Mackenzie).
- * Teste: no site de demonstração (sem Supabase), ?comunidade=puc-sp liga uma comunidade —
- * inclusive dormindo — só neste navegador; ?comunidade=mackenzie volta ao normal.
+ * Universidade em uso agora: a escolhida na tela de entrada e, depois do login, a da conta.
+ * Lida na hora (não guarde em constante de módulo), porque muda com o app aberto.
  */
-function resolveActive(): { community: Community; testing: boolean } {
-  const byId = (id?: string | null) => COMMUNITIES.find((c) => c.id === id);
-  const built = byId(process.env.EXPO_PUBLIC_COMMUNITY) ?? MACKENZIE;
-  const demo = !process.env.EXPO_PUBLIC_SUPABASE_URL || !process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!demo || typeof window === 'undefined' || !window.location) return { community: built, testing: false };
-  try {
-    const asked = new URLSearchParams(window.location.search).get('comunidade');
-    if (asked !== null) {
-      if (byId(asked) && asked !== built.id) window.localStorage.setItem(TEST_KEY, asked);
-      else window.localStorage.removeItem(TEST_KEY);
-    }
-    const test = byId(window.localStorage.getItem(TEST_KEY));
-    return test && test.id !== built.id ? { community: test, testing: true } : { community: built, testing: false };
-  } catch {
-    return { community: built, testing: false };
-  }
+export function activeCommunity(): Community {
+  return current;
 }
 
-const resolved = resolveActive();
-export const ACTIVE_COMMUNITY = resolved.community;
-/** true quando o site de demonstração está mostrando outra comunidade só para teste. */
-export const COMMUNITY_TEST_MODE = resolved.testing;
+/** Troca a universidade em uso (só entre as ativas). O store chama isto; telas usam useStore().community. */
+export function setActiveCommunity(id: string | null | undefined): Community {
+  current = byId(id) ?? current;
+  return current;
+}
+
+/** Link direto para uma universidade no site (ex.: …/campus/?comunidade=puc-sp). */
+export function communityFromLink(): string | null {
+  try {
+    if (typeof window === 'undefined' || !window.location) return null;
+    const id = new URLSearchParams(window.location.search).get('comunidade');
+    return byId(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
 
 export function emailDomain(email: string): string {
   return email.trim().toLowerCase().split('@')[1] ?? '';
 }
 
-export function isInstitutionalEmail(email: string, community: Community = ACTIVE_COMMUNITY) {
+export function isInstitutionalEmail(email: string, community: Community = activeCommunity()) {
   return community.emailDomains.includes(emailDomain(email));
 }

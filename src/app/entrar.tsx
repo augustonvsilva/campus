@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandWatermark, Button, CampusLogo, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
+import { ACTIVE_COMMUNITIES } from '@/lib/community';
 import { NOT_AFFILIATED } from '@/lib/legal';
 import { useStore } from '@/lib/store';
 import { colors } from '@/theme';
@@ -142,6 +143,22 @@ export default function Entrar() {
           </View>
         ) : (
           <>
+            {ACTIVE_COMMUNITIES.length > 1 ? (
+              <View style={{ gap: 8 }}>
+                <Text style={styles.fieldLabel}>Sua universidade</Text>
+                <ChipRow>
+                  {ACTIVE_COMMUNITIES.map((c) => (
+                    <Chip key={c.id} label={c.shortName} icon="school-outline" active={community.id === c.id}
+                      onPress={() => {
+                        // Cursos e convites mudam com a universidade.
+                        setCourse('');
+                        setError(null);
+                        void actions.chooseCommunity(c.id);
+                      }} />
+                  ))}
+                </ChipRow>
+              </View>
+            ) : null}
             <ChipRow>
               <Chip label="Tenho um convite" icon="mail-open-outline" active={mode === 'signup'} onPress={() => switchMode('signup')} />
               <Chip label="Já tenho conta" icon="log-in-outline" active={mode === 'login'} onPress={() => switchMode('login')} />
@@ -150,7 +167,7 @@ export default function Entrar() {
             <View style={{ gap: 14 }}>
               {mode === 'signup' ? (
                 <>
-                  <Field label="Código de convite" value={invite} onChangeText={edit(setInvite)} autoCapitalize="characters" placeholder="Ex.: MACK-7KQ2P" />
+                  <Field label="Código de convite" value={invite} onChangeText={edit(setInvite)} autoCapitalize="characters" placeholder={`Ex.: ${community.invitePrefix}-7KQ2P`} />
                   <Field label="Seu nome" value={name} onChangeText={edit(setName)} placeholder="Como você quer aparecer" autoComplete="name" />
                   <Field
                     label="Nome de usuário"
@@ -213,7 +230,7 @@ export default function Entrar() {
             {backend === 'demo' ? (
               <Text style={[styles.hint, { textAlign: 'center' }]}>
                 Modo demonstração: os dados ficam só neste aparelho.{'\n'}
-                Convites: MACK2026 (membro) ou FUNDADORES (admin, com acesso à moderação).
+                Convites: {community.inviteCodes[0]} (membro) ou FUNDADORES (admin, com acesso à moderação).
               </Text>
             ) : null}
             <Text style={[styles.hint, { textAlign: 'center' }]}>{NOT_AFFILIATED}</Text>
