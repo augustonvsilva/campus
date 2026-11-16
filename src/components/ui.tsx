@@ -68,31 +68,40 @@ export function BrandWatermark({ size = 520, opacity = 0.06, style }: { size?: n
 /** Sombra no texto que fica sobre a foto do campus, para ler bem em qualquer parte da imagem. */
 const textOnPhoto = () => ({ textShadowColor: themeMode() === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)', textShadowRadius: 8, textShadowOffset: { width: 0, height: 1 } });
 
+/** Foto do campus como capa do topo das abas, atenuada para o título continuar legível. */
+function CoverPhoto() {
+  const { community } = useStore();
+  const cover = community.cover;
+  if (!cover) return null;
+  return (
+    <>
+      <Image source={cover.source} resizeMode="cover" accessibilityIgnoresInvertColors
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bg, opacity: themeMode() === 'light' ? 0.55 : 0.45 }} />
+    </>
+  );
+}
+
 export function TabHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const insets = useSafeAreaInsets();
   const { me, community, unreadActivity, unreadMessages, messagesEnabled } = useStore();
   const wide = useWide();
+  const cover = community.cover;
   if (wide) {
     return (
-      <View style={[styles.header, { paddingTop: 20, borderBottomWidth: 0 }]}>
+      <View style={[styles.header, { paddingTop: 20, borderBottomWidth: 0, overflow: 'hidden' }, cover && { paddingTop: 44, paddingBottom: 32 }]}>
+        <CoverPhoto />
         <View style={{ flex: 1 }}>
-          <Text style={styles.h1}>{title}</Text>
-          {subtitle ? <Text style={styles.muted}>{subtitle}</Text> : null}
+          {cover ? <Text style={[styles.kicker, { fontSize: 14 }, textOnPhoto()]} numberOfLines={1}>{community.shortName}</Text> : null}
+          <Text style={[styles.h1, cover && textOnPhoto()]}>{title}</Text>
+          {subtitle ? <Text style={[styles.muted, cover && textOnPhoto()]}>{subtitle}</Text> : null}
         </View>
       </View>
     );
   }
-  const cover = community.cover;
   return (
     <View style={[styles.header, { paddingTop: insets.top + 12, overflow: 'hidden' }, cover && { paddingTop: insets.top + 30, paddingBottom: 28 }]}>
-      {cover ? (
-        // Celular: a foto do campus vira capa do topo, atenuada para o título continuar legível.
-        <>
-          <Image source={cover.source} resizeMode="cover" accessibilityIgnoresInvertColors
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
-          <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bg, opacity: themeMode() === 'light' ? 0.55 : 0.45 }} />
-        </>
-      ) : null}
+      <CoverPhoto />
       <View style={[styles.row, { flex: 1, gap: 12 }]}>
         <CampusLogo size={42} />
         <View style={{ flex: 1 }}>
