@@ -36,8 +36,8 @@ export interface CampusPhoto {
   author?: string;
   /** Ex.: "CC BY-SA 1.0" ou "CC0" (domínio público). */
   license?: string;
-  /** Página da foto (onde estão autor e licença). */
-  url: string;
+  /** Página da foto (onde estão autor e licença), quando houver. */
+  url?: string;
   /** Ex.: "Campus Higienópolis". */
   place: string;
   /** Recorte mais largo para a capa do computador (faixa bem baixa). Sem ele, usa `source`. */
