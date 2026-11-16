@@ -61,6 +61,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | Editar e apagar a própria publicação e os próprios comentários (marcados como "editado") | ✅ |
 | Compartilhar link, ver no mapa, adicionar ao Google Agenda ou baixar .ics | ✅ |
 | Conversa nas saídas e chave Pix com botão de copiar | ✅ |
+| Site instalável (PWA: ícone na tela inicial) e prévia de link no WhatsApp/Instagram | ✅ |
 | Excluir conta (apaga dados e arquivos; comunidades passam ao membro mais antigo) | ✅ |
 | Termos de uso, Política de Privacidade e aviso de não afiliação | ✅ rascunho, revisar com advogado (`src/lib/legal.ts`) |
 | "Esqueci a senha": entra com código por e-mail e cria nova senha; troca de senha no perfil | ✅ |

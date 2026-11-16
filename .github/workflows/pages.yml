@@ -35,12 +35,12 @@ jobs:
           EXPO_BASE_URL: /${{ github.event.repository.name }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      # Prévia de link (WhatsApp/Instagram), PWA (instalar na tela inicial), 404.html e .nojekyll.
       - name: Ajustes para o GitHub Pages
-        run: |
-          # Rotas do app (ex.: /campus/eventos) abrem direto mesmo ao recarregar a página.
-          cp dist/index.html dist/404.html
-          # Pastas com "_" (ex.: _expo) não podem ser ignoradas.
-          touch dist/.nojekyll
+        run: node scripts/web-postbuild.mjs dist
+        env:
+          EXPO_BASE_URL: /${{ github.event.repository.name }}
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
