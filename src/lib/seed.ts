@@ -274,13 +274,18 @@ export function seedData(now = Date.now()) {
       id: 'ride1', communityId: C, groupId: 'g_eng', eventId: 'e6', title: 'Combi para a Interatlética',
       departsAt: at(5, 13, 30, now), departurePoint: 'Portão principal', destination: 'Ginásio da outra universidade',
       seats: 14, price: 'R$ 15 ida e volta', notes: 'Volta logo depois da final. Leve a camisa da atlética!',
+      pixKey: 'atletica.eng@exemplo.com',
       reservations: ['u_bruno', 'u_diego', 'u_felipe'], createdBy: 'u_bruno', createdAt: now - 2 * DAY,
+      comments: [
+        { id: 'rc1', authorId: 'u_diego', text: 'A volta é que horas mais ou menos?', createdAt: now - 20 * HOUR },
+        { id: 'rc2', authorId: 'u_bruno', text: 'Uns 40 min depois da final. Aviso aqui quando sair!', createdAt: now - 19 * HOUR },
+      ],
     },
     {
       id: 'ride2', communityId: C, groupId: 'g_bat', eventId: 'e3', title: 'Ônibus da bateria para a Calourada',
       departsAt: at(1, 21, 0, now), departurePoint: 'Estacionamento coberto', destination: 'Casa de eventos',
       seats: 40, price: 'R$ 20', notes: 'Prioridade para quem toca. Sobrou lugar? Libera pra geral.',
-      reservations: ['u_carla', 'u_gabi', 'u_ana'], createdBy: 'u_carla', createdAt: now - DAY,
+      reservations: ['u_carla', 'u_gabi', 'u_ana'], createdBy: 'u_carla', createdAt: now - DAY, comments: [],
     },
   ];
 

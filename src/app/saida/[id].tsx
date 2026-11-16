@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
+import { PixBox, QuickActions } from '@/components/actions';
 import { EventCard } from '@/components/cards';
+import { CommentThread } from '@/components/comments';
 import { GroupCard, PersonRow } from '@/components/social';
 import { Badge, Button, Card, Empty, IconName, Notice, Section, styles } from '@/components/ui';
 import { useMe, useStore } from '@/lib/store';
@@ -33,7 +35,8 @@ export default function SaidaScreen() {
   );
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { gap: 20 }]}>
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
+    <ScrollView contentContainerStyle={[styles.content, { gap: 20 }]} keyboardShouldPersistTaps="handled">
       {ride.cancelled ? <Notice tone="warn" icon="close-circle" text="Esta saída foi cancelada pela comunidade." /> : null}
       <View style={{ gap: 8 }}>
         <Text style={[styles.label, { color: colors.accent }]}>SAÍDA · {relativeStart(ride.departsAt, now).toUpperCase()}</Text>
@@ -50,6 +53,17 @@ export default function SaidaScreen() {
         {ride.notes ? info('chatbox-ellipses-outline', ride.notes) : null}
         <Text style={styles.hint}>Pagamento e embarque são combinados com a comunidade organizadora. O Campus não intermedeia valores.</Text>
       </Card>
+
+      <QuickActions
+        share={{ title: `Saída: ${ride.title}`, path: `/saida/${ride.id}` }}
+        place={ride.departurePoint}
+        calendar={ride.cancelled ? undefined : {
+          title: ride.title, start: ride.departsAt, end: ride.departsAt + 3_600_000,
+          location: ride.departurePoint, details: `Destino: ${ride.destination}${ride.price ? ` · ${ride.price}` : ''}`,
+        }}
+      />
+
+      {ride.pixKey && !ride.cancelled ? <PixBox pixKey={ride.pixKey} amount={ride.price} /> : null}
 
       {!ride.cancelled && !departed ? (
         <Button
@@ -72,6 +86,11 @@ export default function SaidaScreen() {
         {!ride.reservations.length ? <Text style={styles.muted}>Ninguém reservou ainda.</Text> : null}
       </Section>
 
+      <CommentThread comments={ride.comments} target="ride" parentId={ride.id} title="Conversa da saída"
+        emptyText="Dúvidas sobre horário, embarque ou pagamento? Pergunte aqui."
+        placeholder="Pergunte ou avise algo…"
+        disabledText={ride.cancelled ? 'A saída foi cancelada; a conversa ficou só para leitura.' : undefined} />
+
       {isAdmin && !ride.cancelled ? (
         <Button label="Cancelar saída" icon="close" variant="danger" onPress={() => actions.cancelRide(ride.id)} />
       ) : !isAdmin ? (
@@ -79,5 +98,6 @@ export default function SaidaScreen() {
           onPress={() => router.push({ pathname: '/denunciar', params: { tipo: 'saida', id: ride.id, autor: ride.createdBy } })} />
       ) : null}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

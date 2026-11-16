@@ -93,9 +93,17 @@ export default function Inicio() {
             </ChipRow>
           </View>
         }
+        ListFooterComponent={list.length ? (
+          <View style={{ alignItems: 'center', gap: 4, paddingVertical: 24 }}>
+            <Text style={styles.hint}>Você viu tudo dos últimos 30 dias.</Text>
+            <Text style={[styles.hint, { color: colors.accent }]} accessibilityRole="link" onPress={() => router.push('/buscar')}>
+              Buscar pessoas, comunidades e eventos
+            </Text>
+          </View>
+        ) : undefined}
         ListEmptyComponent={
           feed === 'seguindo'
-            ? <Empty icon="people-outline" title="Nada de quem você segue ainda" text="Siga pessoas e entre em comunidades para montar seu feed." />
+            ? <Empty icon="people-outline" title="Nada de quem você segue ainda" text="Siga pessoas e entre em comunidades para montar seu feed. Veja as sugestões acima ou toque na lupa para buscar." />
             : <Empty icon="chatbubbles-outline" title="O feed está quieto" text="Seja a primeira pessoa a publicar hoje." />
         }
       />

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { QuickActions } from '@/components/actions';
 import { openGroup, RideCard } from '@/components/social';
 import { Avatar, Badge, Button, Card, Empty, IconName, Section, styles } from '@/components/ui';
 import { eventCategory } from '@/lib/labels';
@@ -63,6 +64,15 @@ export default function EventoScreen() {
         ) : info('megaphone-outline', `Organização: ${event.organizer}`)}
         {info('people-outline', `${event.going.length} vão · ${event.interested.length} interessados`)}
       </Card>
+
+      <QuickActions
+        share={{ title: event.title, path: `/evento/${event.id}` }}
+        place={event.location}
+        calendar={ended ? undefined : {
+          title: event.title, start: event.startsAt, end: event.endsAt, location: event.location,
+          details: event.description || `Organização: ${event.organizer}`,
+        }}
+      />
 
       {friendsGoing.length ? (
         <View style={[styles.row, { gap: 10 }]}>

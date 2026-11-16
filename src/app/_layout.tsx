@@ -54,6 +54,9 @@ function RootStack() {
         <Stack.Screen name="bora/[id]" options={{ title: 'Bora?' }} />
         <Stack.Screen name="lugar/[id]" options={{ title: 'Lugar' }} />
         <Stack.Screen name="perfil" options={{ title: 'Perfil' }} />
+        <Stack.Screen name="atividade" options={{ title: 'Atividade' }} />
+        <Stack.Screen name="buscar" options={{ title: 'Buscar' }} />
+        <Stack.Screen name="boas-vindas" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="usuario/[id]" options={{ title: 'Perfil' }} />
         <Stack.Screen name="conexoes" options={{ title: 'Conexões' }} />
         <Stack.Screen name="comunidade/[id]" options={{ title: 'Comunidade' }} />

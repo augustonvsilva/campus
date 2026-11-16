@@ -93,7 +93,11 @@ export interface Ride {
   seats?: number;
   price?: string;
   notes?: string;
+  /** Chave Pix para pagar a comunidade organizadora (o Campus não intermedeia). */
+  pixKey?: string;
   reservations: ID[];
+  /** Conversa da saída. */
+  comments: Comment[];
   createdBy?: ID;
   createdAt: number;
   cancelled?: boolean;
@@ -104,6 +108,23 @@ export interface Comment {
   authorId: ID;
   text: string;
   createdAt: number;
+  editedAt?: number;
+}
+
+/** Onde fica um comentário: publicação, Bora? ou conversa de saída. */
+export type CommentTarget = 'post' | 'bora' | 'ride';
+
+export type ActivityKind = 'follow' | 'like' | 'comment' | 'reply' | 'bora_join' | 'ride_reserve' | 'group_join';
+
+/** Algo que outra pessoa fez com o seu conteúdo (central de atividade). */
+export interface Activity {
+  id: string;
+  kind: ActivityKind;
+  actorId: ID;
+  targetType: 'usuario' | 'post' | 'bora' | 'saida' | 'comunidade';
+  targetId: ID;
+  snippet?: string;
+  at: number;
 }
 
 export interface PollOption {
@@ -126,6 +147,7 @@ export interface Post {
   imageUrl?: string;
   poll?: PollOption[];
   likes: ID[];
+  editedAt?: number;
   comments: Comment[];
 }
 

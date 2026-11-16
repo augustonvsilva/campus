@@ -52,6 +52,7 @@ export function PostCard({ post, linked = true, showGroup = true }: { post: Post
             <Text style={styles.muted}>
               {author?.course ? `${author.course} · ` : ''}
               {ago(post.createdAt, now)}
+              {post.editedAt ? ' · editado' : ''}
             </Text>
           </View>
         </Pressable>

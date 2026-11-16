@@ -9,6 +9,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { AppState } from 'react-native';
 
 import { avatarColors } from '@/theme';
+import { deriveDemoActivity } from './activity';
 import { ACTIVE_COMMUNITY, isInstitutionalEmail } from './community';
 import { handleProblem, normalizeHandle, passwordProblem } from './handle';
 import type { PreparedImage } from './images';
@@ -17,7 +18,7 @@ import { seedData } from './seed';
 import { supabase, SUPABASE_ENABLED } from './supabase';
 import { HOUR } from './time';
 import type {
-  Bora, BoraVisibility, CampusEvent, Comment, Community, EventCategory, Group, GroupKind, GroupRole, ID, Invite, Place,
+  Activity, Bora, BoraVisibility, CampusEvent, Comment, CommentTarget, Community, EventCategory, Group, GroupKind, GroupRole, ID, Invite, Place,
   Post, RemovableTarget, Report, ReportTarget, Ride, Settings, User, VerificationRequest,
 } from './types';
 
@@ -25,6 +26,14 @@ export { SUPABASE_ENABLED };
 export type LocalImage = remote.LocalImage;
 
 const STORAGE_KEY = 'campus:state:v3';
+/** Preferências deste aparelho (valem nos dois modos): última visita à atividade e boas-vindas concluídas. */
+const PREFS_KEY = 'campus:prefs:v1';
+
+interface Prefs {
+  activitySeenAt: Record<ID, number>;
+  onboarded: Record<ID, boolean>;
+}
+const defaultPrefs: Prefs = { activitySeenAt: {}, onboarded: {} };
 const C = ACTIVE_COMMUNITY.id;
 
 interface State {
@@ -45,6 +54,8 @@ interface State {
   following: Record<ID, ID[]>;
   /** Só na demo: hash da senha de cada conta criada no aparelho. No Supabase, a senha fica no Auth. */
   passwords: Record<ID, string>;
+  /** Supabase: central de atividade (my_activity). Na demo é derivada na hora. */
+  activity: Activity[];
 }
 
 const defaultSettings: Settings = {
@@ -55,7 +66,7 @@ const defaultSettings: Settings = {
 
 const emptyState = (): State => ({
   session: null, users: {}, posts: [], events: [], boras: [], places: [], reports: [], blocked: [],
-  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {}, passwords: {},
+  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {}, passwords: {}, activity: [],
 });
 
 const demoState = (): State => ({ ...emptyState(), ...seedData() });
@@ -104,7 +115,7 @@ function withoutUser(s: State, m: ID): State {
     boras: s.boras.filter((b) => b.authorId !== m).map((b) => noComments({ ...b, participants: notMe(b.participants) })),
     events: s.events.filter((e) => !e.groupId || groupIds.has(e.groupId))
       .map((e) => ({ ...e, interested: notMe(e.interested), going: notMe(e.going) })),
-    rides: s.rides.filter((r) => groupIds.has(r.groupId)).map((r) => ({ ...r, reservations: notMe(r.reservations) })),
+    rides: s.rides.filter((r) => groupIds.has(r.groupId)).map((r) => noComments({ ...r, reservations: notMe(r.reservations) })),
     places: s.places.map((pl) => ({ ...pl, recommendations: pl.recommendations.filter((r) => r.authorId !== m) })),
     reports: s.reports.filter((r) => r.reporterId !== m),
     invites: s.invites.filter((i) => i.createdBy !== m),
@@ -126,6 +137,8 @@ const demoHash = (userId: ID, password: string) =>
 function useCampusState() {
   const [state, setState] = useState<State>(SUPABASE_ENABLED ? emptyState : demoState);
   const [hydrated, setHydrated] = useState(false);
+  const [prefs, setPrefs] = useState<Prefs>(defaultPrefs);
+  const [prefsReady, setPrefsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const stateRef = useRef(state);
@@ -143,8 +156,12 @@ function useCampusState() {
   const load = useCallback(async (userId: ID) => {
     setRefreshing(true);
     try {
-      const snap = await remote.fetchSnapshot(userId);
-      setState((s) => ({ ...s, ...snap, session: { userId } }));
+      const [snap, activity] = await Promise.all([
+        remote.fetchSnapshot(userId),
+        // A atividade não pode derrubar o app (ex.: migration 0008 ainda não aplicada).
+        remote.fetchActivity().catch(() => [] as Activity[]),
+      ]);
+      setState((s) => ({ ...s, ...snap, activity, session: { userId } }));
     } catch (e) {
       setState((s) => ({ ...s, session: { userId } }));
       setError(errorMessage(e));
@@ -168,7 +185,11 @@ function useCampusState() {
     if (!SUPABASE_ENABLED || !supabase) {
       AsyncStorage.getItem(STORAGE_KEY)
         .then((raw) => {
-          if (raw) setState({ ...demoState(), ...(JSON.parse(raw) as Partial<State>) });
+          if (!raw) return;
+          const saved = JSON.parse(raw) as Partial<State>;
+          // Dados salvos por versões anteriores: saídas ainda sem conversa.
+          if (saved.rides) saved.rides = saved.rides.map((r) => ({ ...r, comments: r.comments ?? [] }));
+          setState({ ...demoState(), ...saved });
         })
         .catch(() => {})
         .finally(() => setHydrated(true));
@@ -185,6 +206,17 @@ function useCampusState() {
     });
     return () => sub.subscription.unsubscribe();
   }, [load]);
+
+  // ── Preferências do aparelho ──
+  useEffect(() => {
+    AsyncStorage.getItem(PREFS_KEY)
+      .then((raw) => { if (raw) setPrefs({ ...defaultPrefs, ...(JSON.parse(raw) as Partial<Prefs>) }); })
+      .catch(() => {})
+      .finally(() => setPrefsReady(true));
+  }, []);
+  useEffect(() => {
+    if (prefsReady) AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs)).catch(() => {});
+  }, [prefs, prefsReady]);
 
   // ── Persistência local (só demo) ──
   // Salva a cada mudança, sem debounce: o estado é pequeno e assim nada se perde
@@ -225,6 +257,14 @@ function useCampusState() {
       local((s, m) => ({ ...s, boras: s.boras.map((b) => (b.id === id ? fn(b, m) : b)) }));
     const mapEvent = (id: ID, fn: (e: CampusEvent, me: ID) => CampusEvent) =>
       local((s, m) => ({ ...s, events: s.events.map((e) => (e.id === id ? fn(e, m) : e)) }));
+    const mapRide = (id: ID, fn: (r: Ride, me: ID) => Ride) =>
+      local((s, m) => ({ ...s, rides: s.rides.map((r) => (r.id === id ? fn(r, m) : r)) }));
+    /** Aplica fn à lista de comentários do alvo (post, Bora? ou saída). */
+    const mapThread = (target: CommentTarget, id: ID, fn: (c: Comment[], me: ID) => Comment[]) => {
+      if (target === 'post') mapPost(id, (p, m) => ({ ...p, comments: fn(p.comments, m) }));
+      else if (target === 'bora') mapBora(id, (b, m) => ({ ...b, comments: fn(b.comments, m) }));
+      else mapRide(id, (r, m) => ({ ...r, comments: fn(r.comments, m) }));
+    };
     const mkComment = (authorId: ID, text: string): Comment => ({ id: newId(), authorId, text: text.trim(), createdAt: Date.now() });
 
     /** Valida formato e disponibilidade do nome de usuário; devolve normalizado ou lança com a mensagem para o usuário. */
@@ -240,8 +280,17 @@ function useCampusState() {
       return handle;
     };
 
+    const setPref = <K extends keyof Prefs>(key: K, value: Prefs[K][ID]) => {
+      const m = me();
+      if (m) setPrefs((p) => ({ ...p, [key]: { ...p[key], [m]: value } }));
+    };
+
     return {
       clearError: () => setError(null),
+      /** Marca a atividade como vista (zera o contador do sino). */
+      markActivitySeen: () => setPref('activitySeenAt', Date.now()),
+      /** Conclui a tela de boas-vindas. */
+      finishOnboarding: () => setPref('onboarded', true),
       checkHandle,
       refresh,
 
@@ -299,6 +348,9 @@ function useCampusState() {
           ...x,
           users: { ...x.users, [id]: user },
           passwords: { ...x.passwords, [id]: passwordHash },
+          // Demo: duas pessoas da comunidade seguem quem chega, para a central de atividade ter o que mostrar.
+          following: Object.fromEntries(Object.entries(x.following).map(([f, list]) =>
+            [f, ['u_ana', 'u_bruno'].includes(f) ? [...list, id] : list])),
           invites: x.invites.map((i) => (i.code === code ? { ...i, uses: i.uses + 1 } : i)),
           session: { userId: id },
         }));
@@ -480,14 +532,31 @@ function useCampusState() {
         }));
         sync(() => remote.setVote(m, postId, next));
       },
-      addComment(target: 'post' | 'bora', id: ID, text: string) {
+      addComment(target: CommentTarget, id: ID, text: string) {
         const m = me();
         if (!m) return;
         const comment = mkComment(m, text);
-        const add = <T extends { comments: Comment[] }>(x: T): T => ({ ...x, comments: [...x.comments, comment] });
-        if (target === 'post') mapPost(id, add);
-        else mapBora(id, add);
+        mapThread(target, id, (list) => [...list, comment]);
         sync(() => remote.addComment(m, target, id, comment));
+      },
+      /** Edita o texto do próprio comentário. */
+      editComment(target: CommentTarget, parentId: ID, commentId: ID, text: string) {
+        const body = text.trim();
+        if (!body) return;
+        mapThread(target, parentId, (list, m) =>
+          list.map((c) => (c.id === commentId && c.authorId === m ? { ...c, text: body, editedAt: Date.now() } : c)));
+        sync(() => remote.updateComment(commentId, body));
+      },
+      deleteComment(target: CommentTarget, parentId: ID, commentId: ID) {
+        mapThread(target, parentId, (list, m) => list.filter((c) => !(c.id === commentId && c.authorId === m)));
+        sync(() => remote.deleteComment(commentId));
+      },
+      /** Edita o texto da própria publicação. */
+      editPost(id: ID, text: string) {
+        const body = text.trim();
+        if (!body) return;
+        mapPost(id, (p, m) => (p.authorId === m ? { ...p, text: body, editedAt: Date.now() } : p));
+        sync(() => remote.updatePost(id, body));
       },
 
       // ── Eventos ──
@@ -613,10 +682,10 @@ function useCampusState() {
       },
 
       // ── Saídas (combis/ônibus) ──
-      addRide(input: Omit<Ride, 'id' | 'communityId' | 'reservations' | 'createdBy' | 'createdAt' | 'cancelled'>) {
+      addRide(input: Omit<Ride, 'id' | 'communityId' | 'reservations' | 'createdBy' | 'createdAt' | 'cancelled' | 'comments'> & { comments?: Comment[] }) {
         const m = me();
         if (!m) return '';
-        const ride: Ride = { ...input, id: newId(), communityId: C, reservations: [], createdBy: m, createdAt: Date.now() };
+        const ride: Ride = { ...input, comments: [], id: newId(), communityId: C, reservations: [], createdBy: m, createdAt: Date.now() };
         setState((s) => ({ ...s, rides: [...s.rides, ride] }));
         sync((mm) => remote.addRide(mm, ride));
         return ride.id;
@@ -670,7 +739,7 @@ function useCampusState() {
             case 'post': return { ...s, posts: s.posts.filter((p) => p.id !== id) };
             case 'bora': return { ...s, boras: s.boras.filter((b) => b.id !== id) };
             case 'evento': return { ...s, events: s.events.filter((e) => e.id !== id) };
-            case 'comentario': return { ...s, posts: s.posts.map(dropComment), boras: s.boras.map(dropComment) };
+            case 'comentario': return { ...s, posts: s.posts.map(dropComment), boras: s.boras.map(dropComment), rides: s.rides.map(dropComment) };
             case 'recomendacao':
               return { ...s, places: s.places.map((p) => ({ ...p, recommendations: p.recommendations.filter((r) => r.id !== id) })) };
             case 'comunidade':
@@ -707,8 +776,18 @@ function useCampusState() {
   const me = state.session ? state.users[state.session.userId] : undefined;
   const isVisible = useCallback((authorId: ID) => !state.blocked.includes(authorId), [state.blocked]);
 
+  const activity = useMemo(() => {
+    if (!me) return [];
+    const list = SUPABASE_ENABLED ? state.activity : deriveDemoActivity(state, me.id);
+    return list.filter((a) => !state.blocked.includes(a.actorId) && state.users[a.actorId]);
+  }, [state, me]);
+  const activitySeenAt = me ? prefs.activitySeenAt[me.id] ?? 0 : 0;
+  const unreadActivity = activity.filter((a) => a.at > activitySeenAt).length;
+  const onboarded = me ? !!prefs.onboarded[me.id] : true;
+
   return {
-    ...state, hydrated, error, refreshing, me, actions, isVisible,
+    ...state, hydrated: hydrated && prefsReady, error, refreshing, me, actions, isVisible,
+    activity, activitySeenAt, unreadActivity, onboarded,
     community: ACTIVE_COMMUNITY as Community,
     backend: SUPABASE_ENABLED ? ('supabase' as const) : ('demo' as const),
   };

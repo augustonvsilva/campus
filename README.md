@@ -22,14 +22,14 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 |---|---|
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
-| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 156 cenários de segurança: convite, exclusão de conta, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
-| `npm run test:e2e` | 31 fluxos no Chrome headless com o modo demo (precisa de `npm run web` rodando sem `.env.local`) |
+| `npm run test:db` | Aplica as migrations num Postgres em memória e roda 177 cenários de segurança: convite, exclusão de conta, edição do próprio conteúdo, central de atividade, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
+| `npm run test:e2e` | 35 fluxos no Chrome headless com o modo demo (precisa do app web rodando em modo demo: sem `.env.local`, ou com `EXPO_PUBLIC_SUPABASE_URL=` vazio) |
 
 ## Colocar o Supabase no ar
 
 1. Crie um projeto em [supabase.com](https://supabase.com). Sugestão: região **São Paulo (sa-east-1)**, pensando na LGPD.
 2. Aplique o banco, por um destes caminhos:
-   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql`, `0007_excluir_conta.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
+   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql`, `0007_excluir_conta.sql`, `0008_engajamento.sql` e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
    - **CLI:** `npx supabase link --project-ref <ref>` e depois `npx supabase db push`.
 3. Em **Authentication → Email Templates → Magic Link**, inclua `{{ .Token }}` no texto, para o e-mail trazer o código de 6 dígitos. Exemplo: `Seu código do Campus: {{ .Token }}`.
    Em **Authentication → Providers → Email**, defina o tamanho mínimo de senha como 8 (o app já exige 8, com letras e números) e deixe *Secure password change* desligado: a troca de senha no perfil não pede a senha antiga, já que a recuperação é feita por código no e-mail.
@@ -55,6 +55,12 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | Área | Status |
 |---|---|
 | Convite + login com e-mail (pessoal ou institucional) e senha; cadastro confirma o e-mail por código | ✅ |
+| Boas-vindas no primeiro acesso: interesses, comunidades para entrar e pessoas para seguir | ✅ |
+| Central de atividade (sino com contador): seguiu, curtiu, comentou, respondeu, entrou no Bora?, reservou, entrou na comunidade | ✅ |
+| Busca por pessoas (@usuário), comunidades, eventos, Bora?, lugares e publicações | ✅ |
+| Editar e apagar a própria publicação e os próprios comentários (marcados como "editado") | ✅ |
+| Compartilhar link, ver no mapa, adicionar ao Google Agenda ou baixar .ics | ✅ |
+| Conversa nas saídas e chave Pix com botão de copiar | ✅ |
 | Excluir conta (apaga dados e arquivos; comunidades passam ao membro mais antigo) | ✅ |
 | Termos de uso, Política de Privacidade e aviso de não afiliação | ✅ rascunho, revisar com advogado (`src/lib/legal.ts`) |
 | "Esqueci a senha": entra com código por e-mail e cria nova senha; troca de senha no perfil | ✅ |

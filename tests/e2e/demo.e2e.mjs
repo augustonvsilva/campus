@@ -8,7 +8,10 @@ const BASE = process.env.E2E_URL ?? 'http://localhost:8081';
 const SHOTS = process.argv[2] ?? 'tests/e2e/screenshots';
 mkdirSync(SHOTS, { recursive: true });
 const browser = await chromium.launch({ channel: process.env.E2E_BROWSER ?? 'chrome', headless: true });
-const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, permissions: ['clipboard-read', 'clipboard-write'] });
+// Sem o menu de compartilhar do sistema (no headless ele não abre): o app cai para "copiar link".
+await context.addInitScript(() => { delete Navigator.prototype.share; });
+const page = await context.newPage();
 const LIVE = page.locator(':not([inert] *):not([inert])');
 
 const problems = [];
@@ -104,6 +107,10 @@ await check('valida convite inválido', async () => {
 await check('cadastro direto com e-mail institucional (já verificado)', async () => {
   await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('FUNDADORES');
   await page.getByText('Entrar no Campus').click();
+  await visible('Que bom ter você aqui, Teste!');
+  await page.getByText('futsal', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await shot('02a-boas-vindas');
+  await page.getByText('Começar', { exact: true }).click();
   await visible('Pergunte, recomende, combine algo…');
   await visible('Quem vai no futsal hoje?', { exact: false });
   await shot('02-inicio');
@@ -113,6 +120,27 @@ await check('curtir publicação', async () => {
   const like = page.getByRole('button', { name: 'Curtir' }).locator('visible=true').and(LIVE).first();
   await like.click();
   await page.getByRole('button', { name: 'Descurtir' }).locator('visible=true').and(LIVE).first().waitFor({ timeout: 5000 });
+});
+
+await check('central de atividade (sino com novidades)', async () => {
+  await page.getByRole('button', { name: 'Atividade, 2 novidades' }).locator('visible=true').and(LIVE).first().click();
+  await visible('começou a seguir você', { exact: false });
+  await shot('02b-atividade');
+  await page.goBack();
+  await page.getByRole('button', { name: 'Atividade', exact: true }).locator('visible=true').and(LIVE).first().waitFor({ timeout: 5000 });
+});
+
+await check('busca por @usuário, comunidade e evento', async () => {
+  await page.getByRole('button', { name: 'Buscar' }).locator('visible=true').and(LIVE).first().click();
+  const box = page.getByPlaceholder('Pessoas, @usuário, comunidades, eventos…');
+  await box.fill('@ana');
+  await visible('Ana Ribeiro');
+  await box.fill('bateria');
+  await visible('Bateria Universitária');
+  await box.fill('xyzsemresultado');
+  await visible('Nada encontrado');
+  await shot('02c-busca');
+  await page.goBack();
 });
 
 await check('aba Agora', async () => {
@@ -169,7 +197,7 @@ await check('criar Bora?', async () => {
 });
 
 await check('comentar no Bora?', async () => {
-  await page.getByPlaceholder('Escreva um comentário…').fill('Levo o baralho!');
+  await page.getByPlaceholder('Mande uma mensagem pro grupo…').fill('Levo o baralho!');
   await page.getByRole('button', { name: 'Enviar comentário' }).click();
   await visible('Levo o baralho!');
   await page.goBack();
@@ -187,6 +215,46 @@ await check('publicar com enquete e validade', async () => {
   await page.getByRole('button', { name: 'Votar em Noite' }).click();
   await visible('100%');
   await shot('09-enquete');
+});
+
+await check('editar a própria publicação e comentário', async () => {
+  await page.goto(BASE);
+  await page.getByText('Melhor horário pra academia do campus?').locator('visible=true').and(LIVE).first().click();
+  await page.getByText('Editar', { exact: true }).locator('visible=true').and(LIVE).last().click();
+  await page.locator('textarea').locator('visible=true').and(LIVE).first().fill('Melhor horário pra academia? (editado pelo teste)');
+  await page.getByText('Salvar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('(editado pelo teste)', { exact: false });
+  await visible('editado', { exact: false });
+  await page.getByPlaceholder('Escreva um comentário…').fill('Comentário com erro de digitação');
+  await page.getByRole('button', { name: 'Enviar comentário' }).click();
+  await visible('Comentário com erro de digitação');
+  await page.getByText('Editar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByLabel('Editar comentário').fill('Comentário corrigido');
+  await page.getByText('Salvar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Comentário corrigido');
+  await page.getByText('Apagar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByText('Comentário corrigido').waitFor({ state: 'detached', timeout: 5000 });
+  await page.goto(BASE);
+});
+
+await check('saída: conversa, Pix, compartilhar e agenda', async () => {
+  await page.goto(BASE + '/saida/ride1');
+  await visible('Conversa da saída', { exact: false });
+  await visible('A volta é que horas mais ou menos?');
+  await page.getByText('Copiar chave Pix').click();
+  await visible('Chave copiada');
+  const pix = await page.evaluate(() => navigator.clipboard.readText());
+  if (pix !== 'atletica.eng@exemplo.com') throw new Error('Pix copiado errado: ' + pix);
+  await page.getByText('Compartilhar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Link copiado', { exact: false });
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  if (!link.endsWith('/saida/ride1')) throw new Error('link compartilhado errado: ' + link);
+  await page.getByPlaceholder('Pergunte ou avise algo…').fill('Posso embarcar no meio do caminho?');
+  await page.getByRole('button', { name: 'Enviar comentário' }).click();
+  await visible('Posso embarcar no meio do caminho?');
+  await visible('Google Agenda');
+  await shot('09b-saida');
+  await page.goto(BASE);
 });
 
 await check('denunciar e bloquear', async () => {
@@ -432,6 +500,8 @@ await check('cadastro com e-mail pessoal fica sem publicar até verificar', asyn
   await pickSemester('1º');
   await page.getByRole('switch').nth(0).click();
   await page.getByText('Entrar no Campus').click();
+  await visible('Que bom ter você aqui, Aluna!');
+  await page.getByText('Pular por agora').click();
   await visible('Confirme que você é aluno', { exact: false });
   await page.getByRole('button', { name: 'Criar publicação, Bora? ou evento' }).locator('visible=true').and(LIVE).first().click();
   await visible('Para publicar, confirme seu vínculo', { exact: false });

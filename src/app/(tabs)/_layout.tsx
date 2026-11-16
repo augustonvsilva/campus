@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, Tabs } from 'expo-router';
+import { Redirect, router, Tabs } from 'expo-router';
 import { ColorValue, Pressable, View } from 'react-native';
 
 import type { IconName } from '@/components/ui';
+import { useStore } from '@/lib/store';
+import { useNow } from '@/lib/time';
 import { colors, radius } from '@/theme';
 
 const icon = (name: IconName) =>
@@ -24,7 +26,13 @@ function CreateTabButton() {
   );
 }
 
+/** Contas criadas nos últimos 7 dias passam uma vez pela tela de boas-vindas. */
+const NEW_ACCOUNT_MS = 7 * 86_400_000;
+
 export default function TabsLayout() {
+  const { me, onboarded } = useStore();
+  const now = useNow();
+  if (me && !onboarded && me.joinedAt > now - NEW_ACCOUNT_MS) return <Redirect href="/boas-vindas" />;
   return (
     <Tabs
       screenOptions={{

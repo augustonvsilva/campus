@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
+import { QuickActions } from '@/components/actions';
 import { CommentThread } from '@/components/comments';
 import { PersonRow } from '@/components/social';
 import { Avatar, Badge, Button, Card, Empty, Notice, styles } from '@/components/ui';
@@ -55,6 +56,15 @@ export default function BoraScreen() {
           <Text style={styles.hint}>Ponto de encontro público. O Campus não compartilha a localização de ninguém.</Text>
         </Card>
 
+        <QuickActions
+          share={{ title: `Bora? ${bora.activity}`, path: `/bora/${bora.id}` }}
+          place={bora.meetingPoint}
+          calendar={bora.cancelled ? undefined : {
+            title: `Bora? ${bora.activity}`, start: bora.startsAt, end: bora.startsAt + 2 * 3_600_000,
+            location: bora.meetingPoint, details: 'Combinado no Campus.',
+          }}
+        />
+
         <View style={{ gap: 10 }}>
           <View style={[styles.row, { justifyContent: 'space-between' }]}>
             <Text style={styles.sectionTitle}>Quem vai</Text>
@@ -82,7 +92,8 @@ export default function BoraScreen() {
           )
         ) : null}
 
-        <CommentThread comments={bora.comments} onSend={(t) => actions.addComment('bora', bora.id, t)} />
+        <CommentThread comments={bora.comments} target="bora" parentId={bora.id} title="Conversa"
+          emptyText="Combine os detalhes aqui: horário, quem leva o quê, onde encontrar." placeholder="Mande uma mensagem pro grupo…" />
 
         {!isAuthor ? (
           <Button label="Denunciar plano" icon="flag-outline" variant="ghost" compact

@@ -54,6 +54,7 @@ const rawUser = async (email, meta) =>
 const legado = await rawUser('legado@gmail.com', { name: 'João Legado', invite_code: 'FUNDADORES' });
 await expectOk('migrations/0006_nick_curso_semestre.sql', () => db.exec(readFileSync(`${root}/supabase/migrations/0006_nick_curso_semestre.sql`, 'utf8')));
 await expectOk('migrations/0007_excluir_conta.sql', () => db.exec(readFileSync(`${root}/supabase/migrations/0007_excluir_conta.sql`, 'utf8')));
+await expectOk('migrations/0008_engajamento.sql', () => db.exec(readFileSync(`${root}/supabase/migrations/0008_engajamento.sql`, 'utf8')));
 const legadoHandle = (await rows(`select handle from profiles where id = $1`, [legado]))[0].handle;
 /^joao\.[0-9a-f]{4}$/.test(legadoHandle) ? ok(`conta antiga recebe nick gerado (${legadoHandle})`) : bad('nick da conta antiga', legadoHandle);
 
@@ -320,6 +321,68 @@ await as(lia, () => expectFail('não troca para nick reservado ou inválido', ()
 const outraLia = await newUser('lia@mackenzista.com.br', { name: 'Outra Lia', invite_code: 'FUNDADORES' });
 (await verificationOf(outraLia)) === 'pending'
   ? ok('cadastro direto com e-mail institucional já usado não verifica') : bad('e-mail institucional verificou duas contas');
+
+console.log('Editar conteúdo, conversa nas saídas, Pix e atividade');
+const e1 = await newUser('eng1@mackenzista.com.br', { name: 'Eng Um', invite_code: 'FUNDADORES' });
+const e2 = await newUser('eng2@mackenzista.com.br', { name: 'Eng Dois', invite_code: 'FUNDADORES' });
+const e3 = await newUser('eng3@mackenzista.com.br', { name: 'Eng Tres', invite_code: 'FUNDADORES' });
+const one = async (user, sql, params) => (await as(user, () => rows(sql, params)))[0];
+const p1 = (await one(e1, `insert into posts (community_id, author_id, body) values ('mackenzie', $1, 'texto original') returning id`, [e1])).id;
+await as(e1, () => expectOk('autor edita o texto do post', () => q(`update posts set body = 'texto editado' where id = $1`, [p1])));
+const ed = (await rows(`select body, edited_at from posts where id = $1`, [p1]))[0];
+ed.body === 'texto editado' && ed.edited_at ? ok('post editado guarda a data da edição') : bad('edição de post', JSON.stringify(ed));
+await as(e1, () => expectFail('autor não muda nada além do texto', () => q(`update posts set expires_at = now() where id = $1`, [p1]), 'só o texto'));
+await as(e2, () => q(`update posts set body = 'invadido' where id = $1`, [p1]));
+(await rows(`select body from posts where id = $1`, [p1]))[0].body === 'texto editado' ? ok('ninguém edita post de outra pessoa') : bad('post alheio foi editado');
+const c1 = (await one(e2, `insert into comments (community_id, post_id, author_id, body) values ('mackenzie', $1, $2, 'comentário') returning id`, [p1, e2])).id;
+await as(e2, () => expectOk('autor edita o próprio comentário', () => q(`update comments set body = 'comentário editado' where id = $1`, [c1])));
+await as(e1, () => q(`update comments set body = 'mexi' where id = $1`, [c1]));
+(await rows(`select body from comments where id = $1`, [c1]))[0].body === 'comentário editado' ? ok('ninguém edita comentário de outra pessoa') : bad('comentário alheio editado');
+await as(e2, () => expectOk('autor apaga o próprio comentário', () => q(`delete from comments where id = $1`, [c1])));
+await db.exec(`update profiles set role = 'moderator' where id = '${e3}'`);
+await as(e3, () => expectOk('moderação continua removendo posts', () => q(`select remove_content('post', $1)`, [p1])));
+await as(e1, () => q(`update posts set body = 'voltei' where id = $1`, [p1]));
+(await rows(`select body from posts where id = $1`, [p1]))[0].body === 'texto editado' ? ok('post removido não pode ser editado') : bad('editou post removido');
+await db.exec(`update profiles set role = 'member' where id = '${e3}'`);
+
+const g1 = (await one(e1, `insert into groups (community_id, name, kind, created_by) values ('mackenzie', 'Atlética Eng', 'atletica', $1) returning id`, [e1])).id;
+await expectFail('chave Pix com mais de 140 caracteres', () => as(e1, () => q(
+  `insert into rides (community_id, group_id, title, departs_at, departure_point, destination, created_by, pix_key) values ('mackenzie', $1, 'Combi', now() + interval '1 day', 'Portão', 'Ginásio', $2, $3)`,
+  [g1, e1, 'x'.repeat(141)])), 'check');
+const r1 = (await one(e1, `insert into rides (community_id, group_id, title, departs_at, departure_point, destination, created_by, pix_key)
+  values ('mackenzie', $1, 'Combi pro jogo', now() + interval '1 day', 'Portão', 'Ginásio', $2, 'pix@campus.com') returning id`, [g1, e1])).id;
+r1 ? ok('saída com chave Pix') : bad('saída com Pix');
+await as(e2, () => expectOk('aluno comenta na conversa da saída', () => q(`insert into comments (community_id, ride_id, author_id, body) values ('mackenzie', $1, $2, 'tem lugar?')`, [r1, e2])));
+await as(pedro, () => expectFail('PUC não comenta na saída do Mackenzie', () => q(`insert into comments (community_id, ride_id, author_id, body) values ('mackenzie', $1, $2, 'oi')`, [r1, pedro]), 'row-level security'));
+await expectFail('comentário precisa de exatamente um alvo', () => q(`insert into comments (community_id, post_id, ride_id, author_id, body) values ('mackenzie', $1, $2, $3, 'x')`, [p1, r1, e2]), 'comments_one_target');
+
+// Atividade da e1: e2 segue, curte, comenta, entra no Bora?, reserva a saída e entra na comunidade.
+const p2 = (await one(e1, `insert into posts (community_id, author_id, body) values ('mackenzie', $1, 'post para atividade') returning id`, [e1])).id;
+const b1 = (await one(e1, `insert into boras (community_id, author_id, activity, starts_at, meeting_point) values ('mackenzie', $1, 'Futsal', now() + interval '2 hours', 'Quadra') returning id`, [e1])).id;
+await as(e2, async () => {
+  await q(`insert into follows (follower_id, followee_id) values ($1, $2)`, [e2, e1]);
+  await q(`insert into post_likes (post_id, user_id) values ($1, $2)`, [p2, e2]);
+  await q(`insert into comments (community_id, post_id, author_id, body) values ('mackenzie', $1, $2, 'boa!')`, [p2, e2]);
+  await q(`insert into bora_participants (bora_id, user_id) values ($1, $2)`, [b1, e2]);
+  await q(`insert into ride_reservations (ride_id, user_id) values ($1, $2)`, [r1, e2]);
+  await q(`insert into group_members (group_id, user_id) values ($1, $2)`, [g1, e2]);
+});
+// Resposta: e1 comenta no post da e3, depois a e2 comenta lá também.
+const p3 = (await one(e3, `insert into posts (community_id, author_id, body) values ('mackenzie', $1, 'post da e3') returning id`, [e3])).id;
+await as(e1, () => q(`insert into comments (community_id, post_id, author_id, body, created_at) values ('mackenzie', $1, $2, 'primeiro', now() - interval '1 minute')`, [p3, e1]));
+await as(e2, () => q(`insert into comments (community_id, post_id, author_id, body) values ('mackenzie', $1, $2, 'segundo')`, [p3, e2]));
+const act = await as(e1, () => rows(`select * from my_activity()`));
+const kinds = new Set(act.map((a) => a.kind));
+['follow', 'like', 'comment', 'reply', 'bora_join', 'ride_reserve', 'group_join'].every((k) => kinds.has(k))
+  ? ok(`atividade traz os 7 tipos (${act.length} itens)`) : bad('tipos de atividade', JSON.stringify([...kinds]));
+act.every((a) => a.actor_id !== e1) ? ok('as próprias ações não aparecem na atividade') : bad('atividade com ação própria');
+act.some((a) => a.kind === 'comment' && a.target_type === 'saida') ? ok('comentário na saída aparece para quem criou') : bad('comentário na saída fora da atividade');
+const actE3 = await as(e3, () => rows(`select * from my_activity()`));
+actE3.every((a) => a.target_id !== p2 && a.target_id !== b1) ? ok('atividade de uma pessoa não vaza para outra') : bad('atividade vazou');
+(await as(pedro, () => rows(`select * from my_activity()`))).length === 0 ? ok('PUC não vê atividade do Mackenzie') : bad('atividade cruzou universidades');
+await db.exec('set role anon');
+await expectFail('visitante não chama a atividade', () => q(`select * from my_activity()`), 'permission denied');
+await db.exec('reset role');
 
 console.log('Excluir conta');
 const tchau = await newUser('tchau@mackenzista.com.br', { name: 'Tchau', invite_code: 'FUNDADORES' });

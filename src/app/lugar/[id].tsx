@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
+import { QuickActions } from '@/components/actions';
 import { CommentList } from '@/components/comments';
 import { Badge, Button, Card, Empty, Field, Notice, styles, VerifyPrompt } from '@/components/ui';
 import { placeCategory, price } from '@/lib/labels';
@@ -47,6 +48,8 @@ export default function LugarScreen() {
             </Text>
           </View>
         </Card>
+
+        <QuickActions share={{ title: `${place.name} · recomendado no Campus`, path: `/lugar/${place.id}` }} place={`${place.name}, ${place.address}`} />
 
         <View style={{ gap: 12 }}>
           <Text style={styles.sectionTitle}>Recomendações da comunidade</Text>

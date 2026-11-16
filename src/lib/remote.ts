@@ -6,6 +6,7 @@ import { DAY } from './time';
 import type {
   Bora, CampusEvent, Comment, EventCategory, Group, GroupKind, GroupRole, ID, Invite, Place, PlaceCategory, Post,
   RemovableTarget, Report, ReportTarget, Ride, Role, Settings, User, Verification, VerificationRequest,
+  Activity, CommentTarget,
 } from './types';
 import { avatarColors } from '@/theme';
 
@@ -63,7 +64,7 @@ interface ProfileRow {
   interests: string[]; verification: Verification; role: Role; profile_visible: boolean; show_bora_participation: boolean;
   avatar_path: string | null; created_at: string;
 }
-interface CommentRow { id: string; author_id: string; body: string; created_at: string }
+interface CommentRow { id: string; author_id: string; body: string; created_at: string; edited_at?: string | null }
 interface GroupRow {
   id: string; community_id: string; name: string; kind: GroupKind; description: string; color: string; verified: boolean;
   created_by: string | null; created_at: string; group_members: { user_id: string; role: GroupRole }[];
@@ -72,10 +73,11 @@ interface RideRow {
   id: string; community_id: string; group_id: string; event_id: string | null; title: string; departs_at: string;
   departure_point: string; destination: string; seats: number | null; price: string | null; notes: string | null;
   created_by: string | null; created_at: string; cancelled_at: string | null; ride_reservations: { user_id: string }[];
+  pix_key: string | null; comments: CommentRow[];
 }
 interface PostRow {
   id: string; community_id: string; author_id: string; body: string; expires_at: string | null; created_at: string;
-  image_path: string | null; group_id: string | null;
+  image_path: string | null; group_id: string | null; edited_at: string | null;
   poll_options: { id: string; label: string; position: number }[];
   poll_votes: { option_id: string; user_id: string }[];
   post_likes: { user_id: string }[];
@@ -100,7 +102,9 @@ interface ReportRow {
   created_at: string; status: string;
 }
 
-const mapComment = (c: CommentRow): Comment => ({ id: c.id, authorId: c.author_id, text: c.body, createdAt: Date.parse(c.created_at) });
+const mapComment = (c: CommentRow): Comment => ({
+  id: c.id, authorId: c.author_id, text: c.body, createdAt: Date.parse(c.created_at), editedAt: ts(c.edited_at),
+});
 const byDate = (a: { createdAt: number }, b: { createdAt: number }) => a.createdAt - b.createdAt;
 
 export interface Snapshot {
@@ -126,10 +130,10 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
   const [profiles, posts, events, boras, places, blocks, notify, reports, verifs, invites, follows, groups, rides, institutional] = await Promise.all([
     db.from('profiles').select('*'),
     db.from('posts')
-      .select('*, poll_options(id,label,position), poll_votes(option_id,user_id), post_likes(user_id), comments(id,author_id,body,created_at)')
+      .select('*, poll_options(id,label,position), poll_votes(option_id,user_id), post_likes(user_id), comments(id,author_id,body,created_at,edited_at)')
       .gte('created_at', iso(now - 30 * DAY)).order('created_at', { ascending: false }).limit(200),
     db.from('events').select('*, event_attendance(user_id,status)').gte('ends_at', iso(now - DAY)).order('starts_at').limit(200),
-    db.from('boras').select('*, bora_participants(user_id), comments(id,author_id,body,created_at)')
+    db.from('boras').select('*, bora_participants(user_id), comments(id,author_id,body,created_at,edited_at)')
       .gte('starts_at', iso(now - DAY)).order('starts_at').limit(200),
     db.from('places').select('*, place_recommendations(id,author_id,body,created_at)'),
     db.from('blocks').select('blocked_id').eq('blocker_id', userId),
@@ -139,7 +143,7 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
     db.from('invites').select('*').eq('created_by', userId),
     db.from('follows').select('follower_id,followee_id'),
     db.from('groups').select('*, group_members(user_id,role)').order('name'),
-    db.from('rides').select('*, ride_reservations(user_id)').gte('departs_at', iso(now - DAY)).order('departs_at').limit(200),
+    db.from('rides').select('*, ride_reservations(user_id), comments(id,author_id,body,created_at,edited_at)').gte('departs_at', iso(now - DAY)).order('departs_at').limit(200),
     db.from('institutional_emails').select('email').eq('user_id', userId).maybeSingle(),
   ]);
   [profiles, posts, events, boras, places, blocks, notify, reports, verifs, invites, follows, groups, rides, institutional].forEach(must);
@@ -185,13 +189,14 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
     rides: ((rides.data ?? []) as RideRow[]).map((r) => ({
       id: r.id, communityId: r.community_id, groupId: r.group_id, eventId: r.event_id ?? undefined, title: r.title,
       departsAt: Date.parse(r.departs_at), departurePoint: r.departure_point, destination: r.destination,
-      seats: r.seats ?? undefined, price: r.price ?? undefined, notes: r.notes ?? undefined,
+      seats: r.seats ?? undefined, price: r.price ?? undefined, notes: r.notes ?? undefined, pixKey: r.pix_key ?? undefined,
+      comments: (r.comments ?? []).map(mapComment).sort(byDate),
       reservations: r.ride_reservations.map((x) => x.user_id), createdBy: r.created_by ?? undefined,
       createdAt: Date.parse(r.created_at), cancelled: !!r.cancelled_at,
     })),
     posts: postRows.map((p) => ({
       id: p.id, communityId: p.community_id, authorId: p.author_id, groupId: p.group_id ?? undefined,
-      text: p.body, createdAt: Date.parse(p.created_at),
+      text: p.body, createdAt: Date.parse(p.created_at), editedAt: ts(p.edited_at),
       expiresAt: ts(p.expires_at), imageUrl: p.image_path ? signed[p.image_path] : undefined,
       poll: p.poll_options.length
         ? [...p.poll_options].sort((a, b) => a.position - b.position).map((o) => ({
@@ -364,10 +369,26 @@ export async function setVote(me: ID, postId: ID, optionId: ID | null) {
   if (optionId) must(await sb().from('poll_votes').insert({ post_id: postId, option_id: optionId, user_id: me }));
 }
 
-export async function addComment(me: ID, target: 'post' | 'bora', targetId: ID, comment: Comment) {
+export async function addComment(me: ID, target: CommentTarget, targetId: ID, comment: Comment) {
   must(await sb().from('comments').insert({
     id: comment.id, community_id: C, author_id: me, body: comment.text,
     post_id: target === 'post' ? targetId : null, bora_id: target === 'bora' ? targetId : null,
+    ride_id: target === 'ride' ? targetId : null,
+  }));
+}
+
+export const updateComment = async (id: ID, text: string) => void must(await sb().from('comments').update({ body: text }).eq('id', id));
+export const deleteComment = async (id: ID) => void must(await sb().from('comments').delete().eq('id', id));
+export const updatePost = async (id: ID, text: string) => void must(await sb().from('posts').update({ body: text }).eq('id', id));
+
+interface ActivityRow { kind: Activity['kind']; actor_id: string; target_type: Activity['targetType']; target_id: string; snippet: string | null; at: string }
+
+/** O que outras pessoas fizeram com o seu conteúdo nos últimos 30 dias (RPC my_activity). */
+export async function fetchActivity(): Promise<Activity[]> {
+  const res = must(await sb().rpc('my_activity'));
+  return ((res.data ?? []) as ActivityRow[]).map((a) => ({
+    id: `${a.kind}:${a.actor_id}:${a.target_id}:${a.at}`, kind: a.kind, actorId: a.actor_id,
+    targetType: a.target_type, targetId: a.target_id, snippet: a.snippet ?? undefined, at: Date.parse(a.at),
   }));
 }
 
@@ -486,7 +507,7 @@ export async function addRide(me: ID, r: Ride) {
   must(await sb().from('rides').insert({
     id: r.id, community_id: C, group_id: r.groupId, event_id: r.eventId ?? null, title: r.title,
     departs_at: iso(r.departsAt), departure_point: r.departurePoint, destination: r.destination,
-    seats: r.seats ?? null, price: r.price ?? null, notes: r.notes ?? null, created_by: me,
+    seats: r.seats ?? null, price: r.price ?? null, notes: r.notes ?? null, pix_key: r.pixKey ?? null, created_by: me,
   }));
 }
 

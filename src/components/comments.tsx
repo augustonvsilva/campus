@@ -5,21 +5,35 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { canPublish, useMe, useStore } from '@/lib/store';
 import { ago, useNow } from '@/lib/time';
-import type { Comment, ReportTarget } from '@/lib/types';
+import type { Comment, CommentTarget, ID, ReportTarget } from '@/lib/types';
 import { colors, radius } from '@/theme';
-import { Avatar, Notice, styles } from './ui';
+import { Avatar, Button, styles, VerifyPrompt } from './ui';
 
-/** Lista de comentários/recomendações com botão de denúncia para conteúdo de terceiros. */
-export function CommentList({ items, reportAs, emptyText }: { items: Comment[]; reportAs: ReportTarget; emptyText: string }) {
-  const { users, isVisible } = useStore();
+/**
+ * Lista de comentários/recomendações. Conteúdo de terceiros tem botão de denúncia;
+ * com `thread`, os próprios comentários podem ser editados e apagados.
+ */
+export function CommentList({ items, reportAs, emptyText, thread }: {
+  items: Comment[]; reportAs: ReportTarget; emptyText: string; thread?: { target: CommentTarget; parentId: ID };
+}) {
+  const { users, isVisible, actions } = useStore();
   const me = useMe();
   const now = useNow();
+  const [editing, setEditing] = useState<ID | null>(null);
+  const [draft, setDraft] = useState('');
   const visible = items.filter((c) => isVisible(c.authorId));
   if (!visible.length) return <Text style={styles.muted}>{emptyText}</Text>;
+
+  const save = (c: Comment) => {
+    if (thread && draft.trim() && draft.trim() !== c.text) actions.editComment(thread.target, thread.parentId, c.id, draft);
+    setEditing(null);
+  };
+
   return (
     <>
       {visible.map((c) => {
         const author = users[c.authorId];
+        const mine = c.authorId === me.id;
         return (
           <View key={c.id} style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable onPress={() => router.push(`/usuario/${c.authorId}`)} accessibilityRole="link" accessibilityLabel={`Ver perfil de ${author?.name ?? 'alguém'}`}>
@@ -27,11 +41,30 @@ export function CommentList({ items, reportAs, emptyText }: { items: Comment[]; 
             </Pressable>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={styles.label} onPress={() => router.push(`/usuario/${c.authorId}`)}>
-                {author?.name ?? 'Alguém'} <Text style={styles.hint}>· {ago(c.createdAt, now)}</Text>
+                {author?.name ?? 'Alguém'} <Text style={styles.hint}>· {ago(c.createdAt, now)}{c.editedAt ? ' · editado' : ''}</Text>
               </Text>
-              <Text style={styles.body}>{c.text}</Text>
+              {editing === c.id ? (
+                <View style={{ gap: 8 }}>
+                  <TextInput value={draft} onChangeText={setDraft} multiline maxLength={500} autoFocus
+                    style={[styles.input, { minHeight: 60 }]} placeholderTextColor={colors.muted} accessibilityLabel="Editar comentário" />
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <Button label="Cancelar" variant="ghost" compact onPress={() => setEditing(null)} />
+                    <Button label="Salvar" compact disabled={!draft.trim()} onPress={() => save(c)} />
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.body}>{c.text}</Text>
+              )}
+              {mine && thread && editing !== c.id ? (
+                <View style={{ flexDirection: 'row', gap: 16, marginTop: 2 }}>
+                  <Text style={[styles.hint, { color: colors.accent }]} accessibilityRole="button"
+                    onPress={() => { setEditing(c.id); setDraft(c.text); }}>Editar</Text>
+                  <Text style={[styles.hint, { color: colors.danger }]} accessibilityRole="button"
+                    onPress={() => actions.deleteComment(thread.target, thread.parentId, c.id)}>Apagar</Text>
+                </View>
+              ) : null}
             </View>
-            {c.authorId !== me.id ? (
+            {!mine ? (
               <Pressable
                 hitSlop={10}
                 accessibilityRole="button"
@@ -47,28 +80,35 @@ export function CommentList({ items, reportAs, emptyText }: { items: Comment[]; 
   );
 }
 
-export function CommentThread({ comments, onSend }: { comments: Comment[]; onSend: (text: string) => void }) {
-  const { isVisible } = useStore();
+/** Conversa de uma publicação, Bora? ou saída, com campo para escrever. */
+export function CommentThread({ comments, target, parentId, title = 'Comentários', emptyText = 'Ninguém comentou ainda. Puxa o assunto!', placeholder = 'Escreva um comentário…', disabledText }: {
+  comments: Comment[]; target: CommentTarget; parentId: ID; title?: string; emptyText?: string; placeholder?: string;
+  /** Quando preenchido, a conversa fica só para leitura (ex.: saída cancelada). */
+  disabledText?: string;
+}) {
+  const { isVisible, actions } = useStore();
   const me = useMe();
   const [text, setText] = useState('');
   const count = comments.filter((c) => isVisible(c.authorId)).length;
   const send = () => {
     if (!text.trim()) return;
-    onSend(text);
+    actions.addComment(target, parentId, text);
     setText('');
   };
 
   return (
     <View style={{ gap: 14 }}>
-      <Text style={styles.sectionTitle}>Comentários {count ? `(${count})` : ''}</Text>
-      <CommentList items={comments} reportAs="comentario" emptyText="Ninguém comentou ainda. Puxa o assunto!" />
+      <Text style={styles.sectionTitle}>{title} {count ? `(${count})` : ''}</Text>
+      <CommentList items={comments} reportAs="comentario" emptyText={emptyText} thread={{ target, parentId }} />
 
-      {canPublish(me) ? (
+      {disabledText ? (
+        <Text style={styles.hint}>{disabledText}</Text>
+      ) : canPublish(me) ? (
         <View style={[styles.row, { backgroundColor: colors.surface, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, paddingLeft: 16, paddingRight: 6 }]}>
           <TextInput
             value={text}
             onChangeText={setText}
-            placeholder="Escreva um comentário…"
+            placeholder={placeholder}
             placeholderTextColor={colors.muted}
             onSubmitEditing={send}
             returnKeyType="send"
@@ -85,7 +125,7 @@ export function CommentThread({ comments, onSend }: { comments: Comment[]; onSen
           </Pressable>
         </View>
       ) : (
-        <Notice tone="warn" icon="hourglass-outline" text="Sua verificação ainda não foi aprovada. Assim que for, você poderá comentar." />
+        <VerifyPrompt text="Para participar da conversa, confirme seu vínculo com a universidade pelo e-mail institucional." />
       )}
     </View>
   );

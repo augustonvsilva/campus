@@ -63,6 +63,7 @@ function RideForm({ groupId, initialEventId }: { groupId: string; initialEventId
   const [seats, setSeats] = useState('');
   const [price, setPrice] = useState('');
   const [notes, setNotes] = useState('');
+  const [pixKey, setPixKey] = useState('');
 
   const departsAt = parseDateTime(date, time, now);
   const nSeats = Number(seats);
@@ -83,6 +84,7 @@ function RideForm({ groupId, initialEventId }: { groupId: string; initialEventId
     const id = actions.addRide({
       groupId, eventId, title: title.trim(), departsAt, departurePoint: departurePoint.trim(), destination: destination.trim(),
       seats: seats ? nSeats : undefined, price: price.trim() || undefined, notes: notes.trim() || undefined,
+      pixKey: pixKey.trim() || undefined, comments: [],
     });
     router.replace(`/saida/${id}`);
   };
@@ -110,6 +112,8 @@ function RideForm({ groupId, initialEventId }: { groupId: string; initialEventId
         <View style={{ flex: 1 }}><Field label="Lugares" value={seats} onChangeText={(v) => setSeats(v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="Sem limite" /></View>
         <View style={{ flex: 1 }}><Field label="Valor (opcional)" value={price} onChangeText={setPrice} maxLength={30} placeholder="Ex.: R$ 15" /></View>
       </View>
+      <Field label="Chave Pix (opcional)" value={pixKey} onChangeText={setPixKey} maxLength={140} autoCapitalize="none"
+        placeholder="E-mail, telefone, CPF/CNPJ ou chave aleatória" hint="Aparece com botão de copiar para quem for pagar." />
       <Field label="Observações" value={notes} onChangeText={setNotes} multiline maxLength={500}
         placeholder="Horário de volta, como pagar, o que levar…" />
       <Button label="Publicar saída" icon="bus" disabled={!valid} onPress={submit} />

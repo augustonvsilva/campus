@@ -41,7 +41,7 @@ export function Avatar({ user, size = 36 }: { user?: User; size?: number }) {
 
 export function TabHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const insets = useSafeAreaInsets();
-  const { me, community } = useStore();
+  const { me, community, unreadActivity } = useStore();
   return (
     <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
       <View style={{ flex: 1 }}>
@@ -49,6 +49,19 @@ export function TabHeader({ title, subtitle }: { title: string; subtitle?: strin
         <Text style={styles.h1}>{title}</Text>
         {subtitle ? <Text style={styles.muted}>{subtitle}</Text> : null}
       </View>
+      <Pressable onPress={() => router.push('/buscar')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Buscar"
+        style={styles.headerIcon}>
+        <Ionicons name="search" size={22} color={colors.text} />
+      </Pressable>
+      <Pressable onPress={() => router.push('/atividade')} hitSlop={8} accessibilityRole="button"
+        accessibilityLabel={unreadActivity ? `Atividade, ${unreadActivity} novidades` : 'Atividade'} style={styles.headerIcon}>
+        <Ionicons name={unreadActivity ? 'notifications' : 'notifications-outline'} size={22} color={colors.text} />
+        {unreadActivity ? (
+          <View style={styles.badgeDot}>
+            <Text style={styles.badgeDotText}>{unreadActivity > 9 ? '9+' : unreadActivity}</Text>
+          </View>
+        ) : null}
+      </Pressable>
       <Link href="/perfil" asChild>
         <Pressable hitSlop={10} accessibilityRole="button" accessibilityLabel="Abrir perfil">
           <Avatar user={me} size={40} />
@@ -319,6 +332,12 @@ export function VerifyPrompt({ text }: { text: string }) {
 }
 
 export const styles = StyleSheet.create({
+  headerIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginRight: 4 },
+  badgeDot: {
+    position: 'absolute', top: 2, right: 0, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
+    backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center',
+  },
+  badgeDotText: { color: colors.onAccent, fontSize: 10, fontWeight: '900' },
   header: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: colors.bg },
   kicker: { color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
   h1: { color: colors.text, fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
