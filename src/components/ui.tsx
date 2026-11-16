@@ -77,7 +77,7 @@ function CoverPhoto() {
     <>
       <Image source={cover.source} resizeMode="cover" accessibilityIgnoresInvertColors
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
-      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bg, opacity: themeMode() === 'light' ? 0.55 : 0.45 }} />
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bg, opacity: themeMode() === 'light' ? 0.42 : 0.32 }} />
     </>
   );
 }
