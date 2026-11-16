@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { RefreshControl, ScrollView, SectionList, Text, View } from 'react-native';
 
 import { EventCard } from '@/components/cards';
-import { Chip, Empty, styles, TabHeader } from '@/components/ui';
+import { Chip, Empty, styles, TabHeader, useWide } from '@/components/ui';
 import { EVENT_CATEGORIES } from '@/lib/labels';
 import { useMe, useStore } from '@/lib/store';
 import { dayLabel, useNow } from '@/lib/time';
@@ -16,6 +16,7 @@ export default function Eventos() {
   const me = useMe();
   const now = useNow(60_000);
   const [filter, setFilter] = useState<Filter>('todos');
+  const wide = useWide();
 
   const upcoming = events
     .filter((e) => e.communityId === community.id && e.endsAt > now)
@@ -33,19 +34,28 @@ export default function Eventos() {
     else sections.push({ title, data: [e] });
   }
 
+  // Filtros: fixos no celular; no computador rolam junto com a capa.
+  const filters = (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: wide ? 0 : 16, paddingBottom: 8 }}>
+      <Chip label="Todos" active={filter === 'todos'} onPress={() => setFilter('todos')} />
+      <Chip label="Meus" icon="star" active={filter === 'meus'} onPress={() => setFilter('meus')} />
+      {EVENT_CATEGORIES.map((c) => (
+        <Chip key={c.id} label={c.label} icon={c.icon} active={filter === c.id} onPress={() => setFilter(c.id)} />
+      ))}
+    </ScrollView>
+  );
+
   return (
     <View style={styles.screen}>
       <TabHeader title="Eventos" subtitle="Agenda universitária" />
-      <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingBottom: 8 }}>
-          <Chip label="Todos" active={filter === 'todos'} onPress={() => setFilter('todos')} />
-          <Chip label="Meus" icon="star" active={filter === 'meus'} onPress={() => setFilter('meus')} />
-          {EVENT_CATEGORIES.map((c) => (
-            <Chip key={c.id} label={c.label} icon={c.icon} active={filter === c.id} onPress={() => setFilter(c.id)} />
-          ))}
-        </ScrollView>
-      </View>
+      {wide ? null : <View>{filters}</View>}
       <SectionList
+        ListHeaderComponent={wide ? (
+          <View style={{ gap: 12, marginBottom: 6 }}>
+            <TabHeader title="Eventos" subtitle="Agenda universitária" scrolling />
+            {filters}
+          </View>
+        ) : undefined}
         sections={sections}
         keyExtractor={(e) => e.id}
         stickySectionHeadersEnabled={false}

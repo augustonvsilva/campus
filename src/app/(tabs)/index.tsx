@@ -78,6 +78,7 @@ export default function Inicio() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={actions.refresh} tintColor={colors.accent} />}
         ListHeaderComponent={
           <View style={{ gap: 16 }}>
+            <TabHeader title="Início" scrolling />
             {!canPublish(me) ? (
               <VerifyPrompt text="Confirme que você é aluno para publicar, comentar e entrar nos Bora?. Enviamos um código para o seu e-mail institucional." />
             ) : null}

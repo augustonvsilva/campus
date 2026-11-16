@@ -37,6 +37,7 @@ export default function Agora() {
       <ScrollView
         contentContainerStyle={[styles.content, { gap: 28 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={actions.refresh} tintColor={colors.accent} />}>
+        <TabHeader title="Agora" subtitle="O que está rolando na comunidade" scrolling />
         <Section title="Rolando agora">
           {liveEvents.length
             ? liveEvents.map((e) => <EventCard key={e.id} event={e} />)

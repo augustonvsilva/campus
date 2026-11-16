@@ -4,7 +4,7 @@ import { ScrollView, Text, TextInput, View } from 'react-native';
 
 import { PlaceCard } from '@/components/cards';
 import { GroupCard, PersonRow } from '@/components/social';
-import { Button, Chip, ChipRow, Empty, Notice, Section, styles, TabHeader } from '@/components/ui';
+import { Button, Chip, ChipRow, Empty, Notice, Section, styles, TabHeader, useWide } from '@/components/ui';
 import { GROUP_KINDS, PLACE_CATEGORIES } from '@/lib/labels';
 import { canPublish, useMe, useStore } from '@/lib/store';
 import { matchesQuery, suggestPeople } from '@/lib/social';
@@ -118,18 +118,23 @@ function Comunidades() {
 export default function Explorar() {
   const params = useLocalSearchParams<{ aba?: Segment }>();
   const [segment, setSegment] = useState<Segment>(params.aba ?? 'lugares');
+  const wide = useWide();
+  // Abas: fixas no celular; no computador rolam junto com a capa.
+  const tabs = (
+    <ChipRow>
+      <Chip label="Lugares" icon="map-outline" active={segment === 'lugares'} onPress={() => setSegment('lugares')} />
+      <Chip label="Pessoas" icon="people-outline" active={segment === 'pessoas'} onPress={() => setSegment('pessoas')} />
+      <Chip label="Comunidades" icon="flag-outline" active={segment === 'comunidades'} onPress={() => setSegment('comunidades')} />
+    </ChipRow>
+  );
 
   return (
     <View style={styles.screen}>
       <TabHeader title="Explorar" subtitle="Lugares, pessoas e comunidades" />
-      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-        <ChipRow>
-          <Chip label="Lugares" icon="map-outline" active={segment === 'lugares'} onPress={() => setSegment('lugares')} />
-          <Chip label="Pessoas" icon="people-outline" active={segment === 'pessoas'} onPress={() => setSegment('pessoas')} />
-          <Chip label="Comunidades" icon="flag-outline" active={segment === 'comunidades'} onPress={() => setSegment('comunidades')} />
-        </ChipRow>
-      </View>
+      {wide ? null : <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{tabs}</View>}
       <ScrollView contentContainerStyle={[styles.content, { gap: 12 }]} keyboardShouldPersistTaps="handled">
+        <TabHeader title="Explorar" subtitle="Lugares, pessoas e comunidades" scrolling />
+        {wide ? tabs : null}
         {segment === 'lugares' ? <Lugares /> : segment === 'pessoas' ? <Pessoas /> : <Comunidades />}
       </ScrollView>
     </View>

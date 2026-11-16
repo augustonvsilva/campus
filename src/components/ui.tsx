@@ -82,14 +82,21 @@ function CoverPhoto() {
   );
 }
 
-export function TabHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+/**
+ * Topo das abas. Celular: fixo, com logo e atalhos (use sem `scrolling`).
+ * Computador: capa que rola junto com o conteúdo (use com `scrolling`, dentro da lista),
+ * para os posts ganharem a tela ao descer. Cada tela coloca os dois; só um aparece.
+ */
+export function TabHeader({ title, subtitle, scrolling }: { title: string; subtitle?: string; scrolling?: boolean }) {
   const insets = useSafeAreaInsets();
   const { me, community, unreadActivity, unreadMessages, messagesEnabled } = useStore();
   const wide = useWide();
   const cover = community.cover;
+  if (wide !== !!scrolling) return null;
   if (wide) {
     return (
-      <View style={[styles.header, { paddingTop: 20, borderBottomWidth: 0, overflow: 'hidden' }, cover && { paddingTop: 44, paddingBottom: 32 }]}>
+      <View style={[styles.header, { paddingTop: 8, paddingHorizontal: 4, borderBottomWidth: 0, backgroundColor: 'transparent' },
+        cover && { overflow: 'hidden', borderRadius: radius.lg, paddingHorizontal: 22, paddingTop: 26, paddingBottom: 18 }]}>
         <CoverPhoto />
         <View style={{ flex: 1 }}>
           {cover ? <Text style={[styles.kicker, { fontSize: 14 }, textOnPhoto()]} numberOfLines={1}>{community.shortName}</Text> : null}
