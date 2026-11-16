@@ -111,6 +111,16 @@ export interface Comment {
   editedAt?: number;
 }
 
+/** Mensagem privada (por enquanto só no modo demonstração). */
+export interface Message {
+  id: ID;
+  fromId: ID;
+  toId: ID;
+  text: string;
+  createdAt: number;
+  readAt?: number;
+}
+
 /** Onde fica um comentário: publicação, Bora? ou conversa de saída. */
 export type CommentTarget = 'post' | 'bora' | 'ride';
 

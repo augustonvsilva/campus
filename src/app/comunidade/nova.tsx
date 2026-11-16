@@ -56,7 +56,7 @@ export default function NovaComunidade() {
         ) : null}
         <Field label="Nome" value={name} onChangeText={setName} maxLength={60} placeholder="Ex.: Atlética de Direito" />
         <View style={{ gap: 8 }}>
-          <Text style={styles.label}>Tipo</Text>
+          <Text style={styles.fieldLabel}>Tipo</Text>
           <ChipRow>
             {GROUP_KINDS.map((k) => <Chip key={k.id} label={k.label} icon={k.icon} active={kind === k.id} onPress={() => setKind(k.id)} />)}
           </ChipRow>
@@ -64,7 +64,7 @@ export default function NovaComunidade() {
         <Field label="Descrição" value={description} onChangeText={setDescription} multiline maxLength={500}
           placeholder="O que rola na comunidade, quando são os treinos/ensaios, como participar…" />
         <View style={{ gap: 8 }}>
-          <Text style={styles.label}>Cor</Text>
+          <Text style={styles.fieldLabel}>Cor</Text>
           <View style={[styles.row, { flexWrap: 'wrap' }]}>
             {GROUP_COLORS.map((c) => (
               <Pressable key={c} onPress={() => setColor(c)} accessibilityRole="button" accessibilityLabel={`Cor ${c}`}

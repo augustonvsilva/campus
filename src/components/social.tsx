@@ -8,7 +8,7 @@ import { useMe, useStore } from '@/lib/store';
 import { isFollowing } from '@/lib/social';
 import { relativeStart, useNow, when } from '@/lib/time';
 import type { Group, ID, Ride, User } from '@/lib/types';
-import { colors, radius } from '@/theme';
+import { colors, hardShadow, radius } from '@/theme';
 import { Avatar, Badge, Card, styles } from './ui';
 
 export const openProfile = (id: ID) => router.push(`/usuario/${id}`);
@@ -27,12 +27,14 @@ export function FollowButton({ userId, compact }: { userId: ID; compact?: boolea
       accessibilityRole="button"
       accessibilityLabel={on ? 'Deixar de seguir' : label}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill,
+        flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.md, borderWidth: 2,
+        borderColor: on ? colors.border : colors.ink,
         paddingHorizontal: compact ? 12 : 18, paddingVertical: compact ? 6 : 10,
-        backgroundColor: on ? colors.surface2 : colors.accent, opacity: pressed ? 0.8 : 1,
+        backgroundColor: on ? colors.surface2 : colors.accent,
+        ...(on ? {} : pressed ? { transform: [{ translateX: 2 }, { translateY: 2 }], ...hardShadow(1) } : hardShadow(3)),
       })}>
       {on ? <Ionicons name={followsMe ? 'people' : 'checkmark'} size={14} color={colors.text} /> : null}
-      <Text style={{ fontWeight: '800', fontSize: compact ? 13 : 15, color: on ? colors.text : colors.onAccent }}>{label}</Text>
+      <Text style={{ fontWeight: '900', fontSize: compact ? 13 : 15, color: on ? colors.text : colors.onAccent }}>{label}</Text>
     </Pressable>
   );
 }

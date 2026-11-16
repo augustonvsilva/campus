@@ -22,7 +22,7 @@ function Stat({ value, label, onPress }: { value: number; label: string; onPress
 
 export default function UsuarioScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { users, following, events, boras, groups, posts, blocked, actions } = useStore();
+  const { users, following, events, boras, groups, posts, blocked, actions, messagesEnabled } = useStore();
   const me = useMe();
   const now = useNow(60_000);
   const user = users[id];
@@ -70,6 +70,10 @@ export default function UsuarioScreen() {
         ) : (
           <View style={[styles.row, { gap: 10 }]}>
             <FollowButton userId={user.id} />
+            {messagesEnabled ? (
+              <Button label="Mensagem" icon="chatbubble-ellipses-outline" variant="secondary" compact
+                onPress={() => router.push(`/mensagens/${user.id}`)} />
+            ) : null}
             <Pressable
               onPress={() => router.push({ pathname: '/denunciar', params: { tipo: 'usuario', id: user.id, autor: user.id } })}
               accessibilityRole="button" accessibilityLabel="Denunciar ou bloquear"

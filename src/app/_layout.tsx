@@ -18,11 +18,11 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StoreProvider>
         <StatusBar style="light" />
-        <View style={{ flex: 1, alignItems: 'center', backgroundColor: wide ? '#0B0C10' : colors.bg }}>
+        <View style={{ flex: 1, alignItems: 'center', backgroundColor: wide ? '#07080B' : colors.bg }}>
           <View
             style={[
               { flex: 1, width: '100%', maxWidth: MAX_WIDTH, backgroundColor: colors.bg },
-              wide && { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border },
+              wide && { borderLeftWidth: 2, borderRightWidth: 2, borderColor: colors.border },
             ]}>
             <RootStack />
             <ErrorBanner />
@@ -42,7 +42,7 @@ function RootStack() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '800' },
+        headerTitleStyle: { fontWeight: '900' },
         headerTransparent: false,
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.bg },
@@ -55,6 +55,8 @@ function RootStack() {
         <Stack.Screen name="lugar/[id]" options={{ title: 'Lugar' }} />
         <Stack.Screen name="perfil" options={{ title: 'Perfil' }} />
         <Stack.Screen name="atividade" options={{ title: 'Atividade' }} />
+        <Stack.Screen name="mensagens/index" options={{ title: 'Mensagens' }} />
+        <Stack.Screen name="mensagens/[id]" options={{ title: 'Conversa' }} />
         <Stack.Screen name="buscar" options={{ title: 'Buscar' }} />
         <Stack.Screen name="boas-vindas" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="usuario/[id]" options={{ title: 'Perfil' }} />

@@ -93,7 +93,7 @@ function RideForm({ groupId, initialEventId }: { groupId: string; initialEventId
     <View style={{ gap: 16 }}>
       <Text style={styles.h2}>Combi, ônibus ou van saindo junto.</Text>
       <View style={{ gap: 8 }}>
-        <Text style={styles.label}>Para qual evento? (opcional)</Text>
+        <Text style={styles.fieldLabel}>Para qual evento? (opcional)</Text>
         <ChipRow>
           <Chip label="Nenhum" active={!eventId} onPress={() => pickEvent(undefined)} />
           {upcoming.map((e) => <Chip key={e.id} label={e.title} active={eventId === e.id} onPress={() => pickEvent(e.id)} />)}
@@ -173,7 +173,7 @@ function PostForm({ groupId }: { groupId?: string }) {
       ) : null}
 
       <View style={{ gap: 8 }}>
-        <Text style={styles.label}>Validade</Text>
+        <Text style={styles.fieldLabel}>Validade</Text>
         <Text style={styles.hint}>Avisos com validade aparecem no Agora e somem quando expiram.</Text>
         <ChipRow>
           {[undefined, 2, 6, 24].map((h) => (
@@ -223,7 +223,7 @@ function BoraForm({ initialActivity, initialPlace }: { initialActivity?: string;
         placeholder="estudar em grupo, ver o jogo, almoçar depois da aula…" />
 
       <View style={{ gap: 8 }}>
-        <Text style={styles.label}>Quando (aproximado)</Text>
+        <Text style={styles.fieldLabel}>Quando (aproximado)</Text>
         <ChipRow>
           {slots.map((s, i) => <Chip key={s.label} label={s.label} active={slot === i} onPress={() => setSlot(i)} />)}
         </ChipRow>
@@ -235,7 +235,7 @@ function BoraForm({ initialActivity, initialPlace }: { initialActivity?: string;
         hint="Escolha sempre um local público. Nunca compartilhe seu endereço." />
 
       <View style={{ gap: 8 }}>
-        <Text style={styles.label}>Quem pode ver</Text>
+        <Text style={styles.fieldLabel}>Quem pode ver</Text>
         <ChipRow>
           <Chip label="Toda a comunidade" icon="globe-outline" active={visibility === 'comunidade'} onPress={() => setVisibility('comunidade')} />
           <Chip label="Só quem tiver o link" icon="link" active={visibility === 'link'} onPress={() => setVisibility('link')} />
@@ -280,7 +280,7 @@ function EventForm({ groupId, organizerName }: { groupId?: string; organizerName
     <View style={{ gap: 16 }}>
       <Field label="Nome do evento" value={title} onChangeText={setTitle} maxLength={80} />
       <View style={{ gap: 8 }}>
-        <Text style={styles.label}>Categoria</Text>
+        <Text style={styles.fieldLabel}>Categoria</Text>
         <ChipRow>
           {EVENT_CATEGORIES.map((c) => (
             <Chip key={c.id} label={c.label} icon={c.icon} active={category === c.id} onPress={() => setCategory(c.id)} />
@@ -293,7 +293,7 @@ function EventForm({ groupId, organizerName }: { groupId?: string; organizerName
       </View>
       {date && time ? <Text style={styles.hint}>{startsAt ? when(startsAt) : 'Data ou horário inválido'}</Text> : null}
       <View style={{ gap: 8 }}>
-        <Text style={styles.label}>Duração</Text>
+        <Text style={styles.fieldLabel}>Duração</Text>
         <ChipRow>
           {[1, 2, 3, 5, 8].map((h) => <Chip key={h} label={`${h} h`} active={duration === h} onPress={() => setDuration(h)} />)}
         </ChipRow>

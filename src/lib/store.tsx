@@ -18,7 +18,7 @@ import { seedData } from './seed';
 import { supabase, SUPABASE_ENABLED } from './supabase';
 import { HOUR } from './time';
 import type {
-  Activity, Bora, BoraVisibility, CampusEvent, Comment, CommentTarget, Community, EventCategory, Group, GroupKind, GroupRole, ID, Invite, Place,
+  Activity, Bora, BoraVisibility, Message, CampusEvent, Comment, CommentTarget, Community, EventCategory, Group, GroupKind, GroupRole, ID, Invite, Place,
   Post, RemovableTarget, Report, ReportTarget, Ride, Settings, User, VerificationRequest,
 } from './types';
 
@@ -56,7 +56,21 @@ interface State {
   passwords: Record<ID, string>;
   /** Supabase: central de atividade (my_activity). Na demo é derivada na hora. */
   activity: Activity[];
+  /** Mensagens privadas: só na demo, guardadas no aparelho. */
+  messages: Message[];
 }
+
+/** Mensagens privadas existem só no modo demonstração (ainda não há tabela/RLS no banco). */
+export const MESSAGES_ENABLED = !SUPABASE_ENABLED;
+
+/** Demo: respostas automáticas de quem é da comunidade fictícia, para a conversa parecer viva. */
+const DEMO_REPLIES = [
+  'Opa! Vi agora 👀',
+  'Bora! Que horas você pensou?',
+  'Fechado, te encontro no portão principal.',
+  'Haha, verdade. Depois me conta como foi!',
+  'Não vou conseguir hoje, mas me chama na próxima 🙌',
+];
 
 const defaultSettings: Settings = {
   notify: { boras: true, eventos: true, comentarios: true },
@@ -66,7 +80,7 @@ const defaultSettings: Settings = {
 
 const emptyState = (): State => ({
   session: null, users: {}, posts: [], events: [], boras: [], places: [], reports: [], blocked: [],
-  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {}, passwords: {}, activity: [],
+  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {}, passwords: {}, activity: [], messages: [],
 });
 
 const demoState = (): State => ({ ...emptyState(), ...seedData() });
@@ -121,6 +135,7 @@ function withoutUser(s: State, m: ID): State {
     invites: s.invites.filter((i) => i.createdBy !== m),
     verificationRequests: s.verificationRequests.filter((v) => v.userId !== m),
     blocked: notMe(s.blocked),
+    messages: s.messages.filter((x) => x.fromId !== m && x.toId !== m),
   };
 }
 
@@ -189,6 +204,7 @@ function useCampusState() {
           const saved = JSON.parse(raw) as Partial<State>;
           // Dados salvos por versões anteriores: saídas ainda sem conversa.
           if (saved.rides) saved.rides = saved.rides.map((r) => ({ ...r, comments: r.comments ?? [] }));
+          saved.messages = saved.messages ?? [];
           setState({ ...demoState(), ...saved });
         })
         .catch(() => {})
@@ -348,6 +364,11 @@ function useCampusState() {
           ...x,
           users: { ...x.users, [id]: user },
           passwords: { ...x.passwords, [id]: passwordHash },
+          // Demo: a Ana manda as boas-vindas por mensagem privada.
+          messages: x.users.u_ana ? [...x.messages, {
+            id: newId(), fromId: 'u_ana', toId: id, createdAt: Date.now(),
+            text: `Oi, ${input.name.trim().split(/\s+/)[0]}! Vi que você chegou no Campus. Hoje tem futsal às 19h, se quiser colar é só entrar no Bora?.`,
+          }] : x.messages,
           // Demo: duas pessoas da comunidade seguem quem chega, para a central de atividade ter o que mostrar.
           following: Object.fromEntries(Object.entries(x.following).map(([f, list]) =>
             [f, ['u_ana', 'u_bruno'].includes(f) ? [...list, id] : list])),
@@ -383,6 +404,32 @@ function useCampusState() {
           return;
         }
         setState((s) => withoutUser(s, m));
+      },
+      // ── Mensagens privadas (demo) ──
+      sendMessage(toId: ID, text: string) {
+        const m = me();
+        const body = text.trim();
+        if (!m || !body || !MESSAGES_ENABLED) return;
+        if (stateRef.current.blocked.includes(toId)) throw new Error('Você bloqueou essa pessoa. Desbloqueie no perfil para conversar.');
+        const msg: Message = { id: newId(), fromId: m, toId, text: body.slice(0, 1000), createdAt: Date.now() };
+        setState((s) => ({ ...s, messages: [...s.messages, msg] }));
+        // Pessoas fictícias da demo respondem sozinhas depois de um instante.
+        if (toId.startsWith('u_')) {
+          setTimeout(() => {
+            setState((s) => {
+              const sent = s.messages.filter((x) => x.fromId === m && x.toId === toId).length;
+              const reply: Message = { id: newId(), fromId: toId, toId: m, text: DEMO_REPLIES[(sent - 1) % DEMO_REPLIES.length]!, createdAt: Date.now() };
+              return s.session?.userId === m ? { ...s, messages: [...s.messages, reply] } : s;
+            });
+          }, 1500);
+        }
+      },
+      /** Marca como lidas as mensagens recebidas dessa pessoa. */
+      markConversationRead(otherId: ID) {
+        const m = me();
+        if (!m || !stateRef.current.messages.some((x) => x.fromId === otherId && x.toId === m && !x.readAt)) return;
+        const now = Date.now();
+        setState((s) => ({ ...s, messages: s.messages.map((x) => (x.fromId === otherId && x.toId === m && !x.readAt ? { ...x, readAt: now } : x)) }));
       },
       /** Cria ou troca a senha da conta logada. */
       async setPassword(password: string) {
@@ -785,9 +832,26 @@ function useCampusState() {
   const unreadActivity = activity.filter((a) => a.at > activitySeenAt).length;
   const onboarded = me ? !!prefs.onboarded[me.id] : true;
 
+  // Conversas privadas: uma por pessoa, a mais recente primeiro. Quem está bloqueado some.
+  const conversations = useMemo(() => {
+    if (!me || !MESSAGES_ENABLED) return [];
+    const byPeer = new Map<ID, { peerId: ID; last: Message; unread: number }>();
+    for (const msg of state.messages) {
+      if (msg.fromId !== me.id && msg.toId !== me.id) continue;
+      const peerId = msg.fromId === me.id ? msg.toId : msg.fromId;
+      if (state.blocked.includes(peerId) || !state.users[peerId]) continue;
+      const c = byPeer.get(peerId) ?? { peerId, last: msg, unread: 0 };
+      if (msg.createdAt >= c.last.createdAt) c.last = msg;
+      if (msg.toId === me.id && !msg.readAt) c.unread++;
+      byPeer.set(peerId, c);
+    }
+    return [...byPeer.values()].sort((a, b) => b.last.createdAt - a.last.createdAt);
+  }, [state.messages, state.blocked, state.users, me]);
+  const unreadMessages = conversations.reduce((n, c) => n + c.unread, 0);
+
   return {
     ...state, hydrated: hydrated && prefsReady, error, refreshing, me, actions, isVisible,
-    activity, activitySeenAt, unreadActivity, onboarded,
+    activity, activitySeenAt, unreadActivity, onboarded, conversations, unreadMessages, messagesEnabled: MESSAGES_ENABLED,
     community: ACTIVE_COMMUNITY as Community,
     backend: SUPABASE_ENABLED ? ('supabase' as const) : ('demo' as const),
   };

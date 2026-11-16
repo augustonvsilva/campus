@@ -5,7 +5,7 @@ import { ColorValue, Pressable, View } from 'react-native';
 import type { IconName } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { useNow } from '@/lib/time';
-import { colors, radius } from '@/theme';
+import { colors, hardShadow, radius } from '@/theme';
 
 const icon = (name: IconName) =>
   function TabIcon({ color, size }: { color: ColorValue; size: number }) {
@@ -19,7 +19,10 @@ function CreateTabButton() {
       accessibilityRole="button"
       accessibilityLabel="Criar publicação, Bora? ou evento"
       style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ backgroundColor: colors.accent, width: 48, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{
+        backgroundColor: colors.accent, width: 52, height: 42, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
+        borderWidth: 2, borderColor: colors.ink, ...hardShadow(3),
+      }}>
         <Ionicons name="add" size={28} color={colors.onAccent} />
       </View>
     </Pressable>
@@ -37,10 +40,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.border },
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, borderTopWidth: 2, height: 64, paddingTop: 6 },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { fontWeight: '700' },
+        tabBarLabelStyle: { fontWeight: '900', fontSize: 11, letterSpacing: 0.3 },
         sceneStyle: { backgroundColor: colors.bg },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Início', tabBarIcon: icon('home') }} />

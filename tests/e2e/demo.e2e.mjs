@@ -130,6 +130,27 @@ await check('central de atividade (sino com novidades)', async () => {
   await page.getByRole('button', { name: 'Atividade', exact: true }).locator('visible=true').and(LIVE).first().waitFor({ timeout: 5000 });
 });
 
+await check('mensagens privadas (demo): boas-vindas, resposta automática e perfil', async () => {
+  await page.getByRole('button', { name: 'Mensagens, 1 não lidas' }).locator('visible=true').and(LIVE).first().click();
+  await visible('Ana Ribeiro');
+  await page.getByRole('link', { name: /Conversa com Ana Ribeiro/ }).click();
+  await visible('Vi que você chegou no Campus', { exact: false });
+  await page.getByPlaceholder('Escreva uma mensagem…').fill('Bora! Chego às 19h.');
+  await page.getByRole('button', { name: 'Enviar mensagem' }).click();
+  await visible('Bora! Chego às 19h.');
+  await visible('Opa! Vi agora', { exact: false });
+  await shot('02d-conversa');
+  await page.goto(BASE + '/usuario/u_diego');
+  await page.getByText('Mensagem', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByPlaceholder('Escreva uma mensagem…').fill('Oi Diego, tem lugar na combi?');
+  await page.getByRole('button', { name: 'Enviar mensagem' }).click();
+  await visible('Opa! Vi agora', { exact: false });
+  await page.goto(BASE + '/mensagens');
+  await visible('Diego Sato');
+  await shot('02e-mensagens');
+  await page.goto(BASE);
+});
+
 await check('busca por @usuário, comunidade e evento', async () => {
   await page.getByRole('button', { name: 'Buscar' }).locator('visible=true').and(LIVE).first().click();
   const box = page.getByPlaceholder('Pessoas, @usuário, comunidades, eventos…');
