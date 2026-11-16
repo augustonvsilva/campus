@@ -4,7 +4,7 @@ import { useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBanner } from '@/components/error-banner';
-import { BackgroundGlow, RightRail, Sidebar, TopBar } from '@/components/shell';
+import { BackgroundGlow, MobileWatermark, RightRail, Sidebar, TopBar } from '@/components/shell';
 import { WIDE } from '@/components/ui';
 import { isModerator, StoreProvider, useStore } from '@/lib/store';
 import { colors, themeMode } from '@/theme';
@@ -49,6 +49,7 @@ function Shell() {
       <View style={{ flex: 1, alignItems: 'center', backgroundColor: width > 640 ? colors.wideBg : colors.bg }}>
         <View style={[{ flex: 1, width: '100%', maxWidth: 640, backgroundColor: colors.bg }, width > 640 && { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border }]}>
           <RootStack />
+          {session ? <MobileWatermark /> : null}
           <ErrorBanner />
         </View>
       </View>

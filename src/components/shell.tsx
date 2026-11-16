@@ -201,6 +201,18 @@ export function RightRail() {
   );
 }
 
+/**
+ * Celular: as telas cobrem tudo, então o logo fica por cima como marca d'água
+ * (bem transparente e sem bloquear toques).
+ */
+export function MobileWatermark() {
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
+      <BrandWatermark size={440} opacity={themeMode() === 'light' ? 0.06 : 0.08} style={{ right: -120, bottom: 70 }} />
+    </View>
+  );
+}
+
 /** Fundo do computador: brilho suave e o logo do Campus em marca d'água bem visível. */
 export function BackgroundGlow() {
   return (
