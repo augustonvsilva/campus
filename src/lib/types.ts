@@ -42,6 +42,8 @@ export interface CampusPhoto {
   place: string;
   /** Recorte mais largo para a capa do computador (faixa bem baixa). Sem ele, usa `source`. */
   sourceWide?: number | { uri: string };
+  /** Versão de `sourceWide` para o tema claro (quando o recorte tem fundo desenhado). */
+  sourceWideLight?: number | { uri: string };
 }
 
 /**

@@ -39,6 +39,7 @@ export const MACKENZIE: Community = {
   cover: {
     source: require('../../assets/campus/mackenzie.jpg'),
     sourceWide: require('../../assets/campus/mackenzie-largo.jpg'),
+    sourceWideLight: require('../../assets/campus/mackenzie-largo-claro.jpg'),
     place: 'Letreiro, Campus Higienópolis',
   },
 };

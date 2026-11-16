@@ -76,7 +76,7 @@ function CoverPhoto() {
   if (!cover) return null;
   return (
     <>
-      <Image source={(wide && cover.sourceWide) || cover.source} resizeMode="cover" accessibilityIgnoresInvertColors
+      <Image source={(wide && themeMode() === 'light' && cover.sourceWideLight) || (wide && cover.sourceWide) || cover.source} resizeMode="cover" accessibilityIgnoresInvertColors
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bg, opacity: themeMode() === 'light' ? 0.42 : 0.32 }} />
     </>
