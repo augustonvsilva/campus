@@ -421,5 +421,27 @@ rep && rep.resolved_by === null ? ok('histórico da moderação fica, sem o auto
 const volta = await expectOk('o e-mail institucional fica livre para uma nova conta', () => newUser('tchau@mackenzista.com.br', { name: 'Volta', invite_code: 'FUNDADORES' }));
 (await verificationOf(volta)) === 'email' ? ok('nova conta com o mesmo e-mail institucional é verificada') : bad('e-mail institucional continuou preso');
 
+console.log('PUC-SP dormindo (0009)');
+const sql0009 = readFileSync(`${root}/supabase/migrations/0009_puc_sp.sql`, 'utf8');
+await expectOk('migrations/0009_puc_sp.sql', () => db.exec(sql0009));
+await expectOk('0009 pode rodar de novo sem erro', () => db.exec(sql0009));
+await db.exec('set role anon');
+(await rows(`select id from communities where id = 'puc-sp'`)).length === 0
+  ? ok('PUC-SP dormindo não aparece para ninguém') : bad('PUC-SP dormindo aparece');
+await db.exec('reset role');
+await expectFail('ninguém entra na PUC-SP dormindo (sem convite)',
+  () => newUser('bia@pucsp.edu.br', { name: 'Bia', invite_code: 'PUC-FUNDADORES' }), 'convite');
+// Acordar: exatamente os passos descritos na migration.
+await db.exec(`update communities set is_active = true where id = 'puc-sp';
+               insert into invites (code, community_id, max_uses) values ('PUC-FUNDADORES', 'puc-sp', 50);`);
+await db.exec('set role anon');
+(await rows(`select id from communities where id = 'puc-sp'`)).length === 1
+  ? ok('PUC-SP acordada aparece') : bad('PUC-SP acordada não aparece');
+await db.exec('reset role');
+const puca = await expectOk('cadastro na PUC-SP acordada', () => newUser('bia@pucsp.edu.br', { name: 'Bia', invite_code: 'puc-fundadores' }));
+const pucaRow = (await rows(`select community_id, verification from profiles where id = $1`, [puca]))[0];
+pucaRow?.community_id === 'puc-sp' && pucaRow?.verification === 'email'
+  ? ok('aluna da PUC-SP verificada pelo @pucsp.edu.br') : bad('cadastro na PUC-SP', JSON.stringify(pucaRow));
+
 console.log(failures ? `\n${failures} FALHA(S)` : '\nTodos os cenários passaram.');
 process.exit(failures ? 1 : 0);

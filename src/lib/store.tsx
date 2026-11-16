@@ -26,7 +26,8 @@ import type {
 export { SUPABASE_ENABLED };
 export type LocalImage = remote.LocalImage;
 
-const STORAGE_KEY = 'campus:state:v3';
+// Dados de demonstração separados por comunidade (o Mackenzie mantém a chave original).
+const STORAGE_KEY = ACTIVE_COMMUNITY.id === 'mackenzie' ? 'campus:state:v3' : `campus:state:v3:${ACTIVE_COMMUNITY.id}`;
 /** Preferências deste aparelho (valem nos dois modos): última visita à atividade e boas-vindas concluídas. */
 const PREFS_KEY = 'campus:prefs:v1';
 
@@ -100,7 +101,7 @@ const errorMessage = (e: unknown) => (e instanceof Error ? e.message : 'Algo deu
 function inviteCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O/1/I
   const bytes = Crypto.getRandomBytes(5);
-  return 'MACK-' + Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+  return ACTIVE_COMMUNITY.invitePrefix + '-' + Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
 }
 
 /** Demo: remove a conta e o que ela criou, com as mesmas regras do banco (migration 0007). */

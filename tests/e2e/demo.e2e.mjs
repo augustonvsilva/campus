@@ -662,6 +662,32 @@ await check('excluir conta (confirmação pelo nome de usuário)', async () => {
   await visible('Não encontramos uma conta com esse e-mail neste aparelho.');
 });
 
+await check('PUC-SP dormindo: modo teste com cadastro, cursos e capa próprios', async () => {
+  await page.goto(BASE + '/?comunidade=puc-sp');
+  await visible('Teste: PUC-SP (dormindo)');
+  await visible('sem vínculo oficial com a Pontifícia Universidade Católica de São Paulo', { exact: false });
+  await page.getByPlaceholder('Ex.: MACK-7KQ2P').fill('PUC2026');
+  await page.getByPlaceholder('Como você quer aparecer').fill('Lia Prado');
+  await page.getByPlaceholder('seu@email.com').fill('lia@pucsp.edu.br');
+  await page.getByRole('switch').nth(0).click();
+  await page.getByPlaceholder('ex.: ana.ribeiro').fill('lia.prado');
+  await page.getByPlaceholder('Mínimo de 8 caracteres').fill('puc2026sp');
+  await page.getByRole('button', { name: 'Escolher curso' }).click();
+  await page.getByPlaceholder('Buscar curso').fill('jogos');
+  await page.getByText('Jogos Digitais', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await pickSemester('2º');
+  await page.getByText('Entrar no Campus').click();
+  await visible('Que bom ter você aqui, Lia!');
+  await page.getByText('Começar', { exact: true }).click();
+  await visible('PUC-SP', { exact: true });
+  await shot('15-puc-teste');
+  await page.goto(BASE + '/perfil');
+  await visible('Pátio da Cruz, Campus Monte Alegre', { exact: false });
+  await page.getByText('Sair do teste').locator('visible=true').first().click();
+  await page.waitForURL((u) => !u.search.includes('puc-sp'));
+  await page.getByText('Teste: PUC-SP', { exact: false }).waitFor({ state: 'detached', timeout: 8000 });
+});
+
 console.log(results.join('\n'));
 const relevant = problems.filter((p) => !/Download the React DevTools|favicon/.test(p));
 console.log(relevant.length ? `\nErros no navegador (${relevant.length}):\n` + [...new Set(relevant)].slice(0, 15).join('\n') : '\nSem erros no console do navegador.');

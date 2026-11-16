@@ -4,7 +4,7 @@ import { Platform, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBanner } from '@/components/error-banner';
-import { BackgroundGlow, MobileWatermark, RightRail, Sidebar, TopBar } from '@/components/shell';
+import { BackgroundGlow, CommunityTestBanner, MobileWatermark, RightRail, Sidebar, TopBar } from '@/components/shell';
 import { WIDE } from '@/components/ui';
 import { isModerator, StoreProvider, useStore } from '@/lib/store';
 import { colors, themeMode } from '@/theme';
@@ -45,6 +45,7 @@ function ThemedRoot() {
     <ThemeProvider value={navTheme}>
       <View key={themeKey} style={{ flex: 1 }}>
         <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
+        <CommunityTestBanner />
         <Shell />
       </View>
     </ThemeProvider>

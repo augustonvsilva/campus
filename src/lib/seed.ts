@@ -123,7 +123,7 @@ export function seedData(now = Date.now()) {
     ev({
       id: 'e1', title: 'Feira de Estágios', category: 'academico',
       startsAt: now - HOUR, endsAt: now + 3 * HOUR,
-      location: 'Campus Higienópolis — área de convivência',
+      location: `${ACTIVE_COMMUNITY.mainCampus} — área de convivência`,
       organizer: 'Centro Acadêmico (exemplo)',
       description: 'Empresas recebendo currículos e conversando com estudantes de todos os cursos. Leve seu currículo impresso ou o QR code do LinkedIn.',
       interested: ['u_felipe', 'u_diego', 'u_eduarda'], going: ['u_felipe'],

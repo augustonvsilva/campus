@@ -15,6 +15,15 @@ export interface Community {
   courses: string[];
   /** Códigos de convite válidos (no backend real, vêm da tabela `invites`). */
   inviteCodes: string[];
+  /** Prefixo dos convites gerados pelos membros. Ex.: "MACK" → MACK-7KQ2P. */
+  invitePrefix: string;
+  /** Campus principal, usado nos textos de exemplo. Ex.: "Campus Higienópolis". */
+  mainCampus: string;
+  /**
+   * ativa: aparece no app. dormindo: já configurada, mas desligada até o lançamento
+   * (dá para testar no site de demonstração com ?comunidade=<id>).
+   */
+  status: 'ativa' | 'dormindo';
   /** Foto do campus usada como fundo. Sem ela, o fundo mostra só o logo do Campus. */
   cover?: CampusPhoto;
 }
@@ -23,10 +32,10 @@ export interface Community {
 export interface CampusPhoto {
   /** Arquivo local (require) ou endereço da imagem. */
   source: number | { uri: string };
-  /** Ex.: "Charlesblack". */
-  author: string;
-  /** Ex.: "CC BY-SA 1.0". */
-  license: string;
+  /** Autor, quando a licença exige crédito. Ex.: "Charlesblack". */
+  author?: string;
+  /** Ex.: "CC BY-SA 1.0" ou "CC0" (domínio público). */
+  license?: string;
   /** Página da foto (onde estão autor e licença). */
   url: string;
   /** Ex.: "Campus Higienópolis". */

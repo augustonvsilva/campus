@@ -250,13 +250,13 @@ function AppearanceSection() {
 }
 
 function InviteSection() {
-  const { actions, invites } = useStore();
+  const { actions, invites, community } = useStore();
   const me = useMe();
   const { busy, error, run } = useAsync();
   const mine = invites.filter((i) => i.createdBy === me.id).sort((a, b) => b.createdAt - a.createdAt);
 
   const share = (code: string) => {
-    const message = `Bora pro Campus? É a rede da comunidade Mackenzie. Use meu convite: ${code}`;
+    const message = `Bora pro Campus? É a rede da comunidade ${community.shortName}. Use meu convite: ${code}`;
     Share.share({ message }).catch(() => Clipboard.setStringAsync(code));
   };
 

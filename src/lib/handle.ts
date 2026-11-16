@@ -7,7 +7,7 @@ export const HANDLE_MAX = 20;
 /** Nomes de usuário que poderiam confundir com contas oficiais ou rotas do app. */
 export const RESERVED_HANDLES = [
   'admin', 'administrador', 'campus', 'equipe', 'moderacao', 'moderador', 'suporte', 'oficial',
-  'mackenzie', 'mackenzista', 'universidade', 'visitante',
+  'mackenzie', 'mackenzista', 'puc', 'pucsp', 'universidade', 'visitante',
 ];
 
 export const SEMESTERS = ['1º', '2º', '3º', '4º', '5º', '6º', '7º', '8º', '9º', '10º', '11º', '12º'];
