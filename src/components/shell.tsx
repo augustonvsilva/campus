@@ -5,7 +5,6 @@ import { router, usePathname } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
-import { coverOf } from '@/lib/community';
 import { canPublish, useMe, useStore } from '@/lib/store';
 import { useNow } from '@/lib/time';
 import { colors, glow, radius, themeMode } from '@/theme';
@@ -226,17 +225,14 @@ export function BackgroundGlow() {
   );
 }
 
-/** Crédito da foto de capa desta abertura (autor e licença, quando a licença exige), com link para a origem. */
+/** Crédito obrigatório da foto de fundo (autor e licença), com link para a origem. */
 export function PhotoCredit({ style }: { style?: object }) {
   const { community } = useStore();
-  const cover = coverOf(community);
+  const cover = community.cover;
   if (!cover) return null;
-  const url = cover.url;
-  const credit = [cover.place, cover.author, cover.license].filter(Boolean).join(' · ');
   return (
-    <Text style={[styles.hint, { fontSize: 11 }, style]} accessibilityRole={url ? 'link' : 'text'}
-      onPress={url ? () => Linking.openURL(url) : undefined}>
-      Foto da capa: {credit}
+    <Text style={[styles.hint, { fontSize: 11 }, style]} accessibilityRole="link" onPress={() => Linking.openURL(cover.url)}>
+      Foto de fundo: {cover.place} · {cover.author} · {cover.license}
     </Text>
   );
 }

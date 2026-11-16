@@ -15,20 +15,20 @@ export interface Community {
   courses: string[];
   /** Códigos de convite válidos (no backend real, vêm da tabela `invites`). */
   inviteCodes: string[];
-  /** Fotos do campus para a capa: a cada abertura do app, uma é sorteada. Sem fotos, fica só o logo. */
-  covers?: CampusPhoto[];
+  /** Foto do campus usada como fundo. Sem ela, o fundo mostra só o logo do Campus. */
+  cover?: CampusPhoto;
 }
 
-/** Foto de capa de uma universidade: precisa ser própria/autorizada ou ter licença livre (com crédito). */
+/** Foto de fundo de uma universidade: precisa ter licença que permita o uso, com crédito. */
 export interface CampusPhoto {
   /** Arquivo local (require) ou endereço da imagem. */
   source: number | { uri: string };
-  /** Autor, quando a licença exige crédito. Ex.: "Charlesblack". */
-  author?: string;
+  /** Ex.: "Charlesblack". */
+  author: string;
   /** Ex.: "CC BY-SA 1.0". */
-  license?: string;
+  license: string;
   /** Página da foto (onde estão autor e licença). */
-  url?: string;
+  url: string;
   /** Ex.: "Campus Higienópolis". */
   place: string;
   /** Recorte mais largo para a capa do computador (faixa bem baixa). Sem ele, usa `source`. */

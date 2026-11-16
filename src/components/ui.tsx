@@ -9,7 +9,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SEMESTERS } from '@/lib/handle';
 import type { User } from '@/lib/types';
-import { coverOf } from '@/lib/community';
 import { useMe, useStore } from '@/lib/store';
 import { colors, glow, hardShadow, onThemeChange, radius, themeMode } from '@/theme';
 
@@ -73,7 +72,7 @@ const textOnPhoto = () => ({ textShadowColor: themeMode() === 'light' ? 'rgba(25
 function CoverPhoto() {
   const { community } = useStore();
   const wide = useWide();
-  const cover = coverOf(community);
+  const cover = community.cover;
   if (!cover) return null;
   return (
     <>
@@ -93,12 +92,12 @@ export function TabHeader({ title, subtitle, scrolling }: { title: string; subti
   const insets = useSafeAreaInsets();
   const { me, community, unreadActivity, unreadMessages, messagesEnabled } = useStore();
   const wide = useWide();
-  const cover = coverOf(community);
+  const cover = community.cover;
   if (wide !== !!scrolling) return null;
   if (wide) {
     return (
       <View style={[styles.header, { paddingTop: 8, paddingHorizontal: 4, borderBottomWidth: 0, backgroundColor: 'transparent' },
-        cover && { overflow: 'hidden', borderRadius: radius.lg, paddingHorizontal: 22, paddingTop: 30, paddingBottom: 26, minHeight: 124 }]}>
+        cover && { overflow: 'hidden', borderRadius: radius.lg, paddingHorizontal: 22, paddingTop: 26, paddingBottom: 18 }]}>
         <CoverPhoto />
         <View style={{ flex: 1 }}>
           {cover ? <Text style={[styles.kicker, { fontSize: 14 }, textOnPhoto()]} numberOfLines={1}>{community.shortName}</Text> : null}

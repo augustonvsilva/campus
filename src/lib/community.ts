@@ -1,4 +1,4 @@
-import type { CampusPhoto, Community } from './types';
+import type { Community } from './types';
 
 // Graduação presencial da Universidade (Higienópolis, Alphaville e Campinas). Variantes de turma
 // (ex.: Ciências Contábeis "Para Graduados" e "Dual Study") entram no curso principal.
@@ -31,53 +31,19 @@ export const MACKENZIE: Community = {
   courses: [...PRESENCIAL, ...EAD].sort((a, b) => a.localeCompare(b, 'pt-BR')),
   // Códigos de demonstração. No backend, convites são individuais e têm limite de uso.
   inviteCodes: ['MACK2026', 'FUNDADORES'],
-  // Capa: cada foto em dois recortes (celular e computador). As do Wikimedia Commons têm licença
-  // livre que exige crédito (aparece no app); as demais foram enviadas pela equipe do Campus.
-  covers: [
-    {
-      source: require('../../assets/campus/letreiro.jpg'),
-      sourceWide: require('../../assets/campus/letreiro-largo.jpg'),
-      place: 'Letreiro, Campus Higienópolis',
-    },
-    {
-      source: require('../../assets/campus/ipes.jpg'),
-      sourceWide: require('../../assets/campus/ipes-largo.jpg'),
-      place: 'Jacarandás, Campus Higienópolis',
-    },
-    {
-      source: require('../../assets/campus/predio.jpg'),
-      sourceWide: require('../../assets/campus/predio-largo.jpg'),
-      place: 'Prédio histórico, Campus Higienópolis',
-    },
-    {
-      source: require('../../assets/campus/bosque.jpg'),
-      sourceWide: require('../../assets/campus/bosque-largo.jpg'),
-      author: 'Luiz de Visconte',
-      license: 'CC BY-SA 4.0',
-      url: 'https://commons.wikimedia.org/wiki/File:Mackcapus2.jpg',
-      place: 'Bosque das Fadas, Campus Higienópolis',
-    },
-    {
-      source: require('../../assets/campus/aerea.jpg'),
-      sourceWide: require('../../assets/campus/aerea-largo.jpg'),
-      author: 'Charlesblack',
-      license: 'CC BY-SA 1.0',
-      url: 'https://commons.wikimedia.org/wiki/File:McKenzie_University_(4).jpg',
-      place: 'Vista aérea, Campus Higienópolis',
-    },
-  ],
+  // Foto livre do Wikimedia Commons (Bosque das Fadas, com o letreiro), em dois recortes:
+  // celular e computador. A licença exige o crédito, que aparece no app.
+  cover: {
+    source: require('../../assets/campus/mackenzie.jpg'),
+    sourceWide: require('../../assets/campus/mackenzie-largo.jpg'),
+    author: 'Luiz de Visconte',
+    license: 'CC BY-SA 4.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Mackcapus2.jpg',
+    place: 'Bosque das Fadas, Campus Higienópolis',
+  },
 };
 
 export const ACTIVE_COMMUNITY = MACKENZIE;
-
-// Sorteado uma vez quando o app abre: a capa troca a cada abertura, mas não muda enquanto a pessoa navega.
-const COVER_SEED = Math.random();
-
-/** Foto de capa desta abertura do app (a mesma em todas as telas). */
-export function coverOf(community: Community): CampusPhoto | undefined {
-  const list = community.covers;
-  return list?.length ? list[Math.floor(COVER_SEED * list.length)] : undefined;
-}
 
 export function emailDomain(email: string): string {
   return email.trim().toLowerCase().split('@')[1] ?? '';
