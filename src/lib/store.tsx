@@ -215,6 +215,11 @@ function useCampusState() {
           if (saved.rides) saved.rides = saved.rides.map((r) => ({ ...r, comments: r.comments ?? [] }));
           saved.messages = saved.messages ?? [];
           saved.tickets = saved.tickets ?? [];
+          // Eventos de simulação adicionados depois: entram também em quem já tinha dados salvos.
+          if (saved.events) {
+            const missing = demoState().events.filter((e) => e.id.startsWith('sim-') && !saved.events!.some((x) => x.id === e.id));
+            saved.events = [...missing, ...saved.events];
+          }
           setState({ ...demoState(), ...saved });
         })
         .catch(() => {})

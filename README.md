@@ -23,7 +23,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
 | `npm run test:db` | Aplica as migrations num Postgres em memória e roda 177 cenários de segurança: convite, exclusão de conta, edição do próprio conteúdo, central de atividade, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
-| `npm run test:e2e` | 39 fluxos no Chrome headless com o modo demo (precisa do app web rodando em modo demo: sem `.env.local`, ou com `EXPO_PUBLIC_SUPABASE_URL=` vazio) |
+| `npm run test:e2e` | 40 fluxos no Chrome headless com o modo demo (precisa do app web rodando em modo demo: sem `.env.local`, ou com `EXPO_PUBLIC_SUPABASE_URL=` vazio) |
 
 ## Colocar o Supabase no ar
 

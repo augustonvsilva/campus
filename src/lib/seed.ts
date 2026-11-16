@@ -103,6 +103,23 @@ export function seedData(now = Date.now()) {
 
   const ev = (e: Omit<CampusEvent, 'communityId'>): CampusEvent => ({ ...e, communityId: C });
   const events: CampusEvent[] = [
+    // Festa fictícia só para simular compra de ingresso (todos os lotes à venda).
+    ev({
+      id: 'sim-neon', title: 'Neon Party (evento fictício)', category: 'festa',
+      startsAt: at(3, 23, 0, now), endsAt: at(4, 5, 0, now),
+      location: 'Rua Fictícia, 123 · Consolação (endereço de exemplo)', organizer: 'Campus · simulação',
+      description: 'Evento de mentira para testar a compra de ingressos: escolha o lote, pague com Pix ou cartão (nada é cobrado) e receba o ingresso com QR code. Depois valide na entrada em "Vendas e portaria".',
+      ticketing: {
+        pixKey: 'simulacao@campus.exemplo', receiver: 'Campus Simulacao',
+        lots: [
+          { id: 'sim-neon-meia', name: 'Meia-entrada', priceCents: 2500, quantity: 100, sold: 37 },
+          { id: 'sim-neon-pista', name: 'Pista', priceCents: 5000, quantity: 300, sold: 128 },
+          { id: 'sim-neon-camarote', name: 'Camarote', priceCents: 9000, quantity: 60, sold: 51 },
+          { id: 'sim-neon-openbar', name: 'Open bar', priceCents: 15000, quantity: 40, sold: 36 },
+        ],
+      },
+      interested: ['u_ana', 'u_bruno', 'u_gabi'], going: ['u_carla', 'u_diego'],
+    }),
     ev({
       id: 'e1', title: 'Feira de Estágios', category: 'academico',
       startsAt: now - HOUR, endsAt: now + 3 * HOUR,

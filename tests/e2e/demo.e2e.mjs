@@ -278,6 +278,18 @@ await check('saída: conversa, Pix, compartilhar e agenda', async () => {
   await page.goto(BASE);
 });
 
+await check('evento fictício de simulação vende ingressos', async () => {
+  await page.goto(BASE + '/evento/sim-neon');
+  await visible('Neon Party (evento fictício)');
+  await visible('a partir de R$ 25,00', { exact: false });
+  await page.getByText('Comprar ingresso', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByRole('radio', { name: /Camarote/ }).click();
+  await page.getByText('Gerar Pix de R$ 90,00', { exact: false }).locator('visible=true').and(LIVE).first().click();
+  await page.getByText('Simular pagamento confirmado').click();
+  await visible('Pagamento aprovado!');
+  await page.goto(BASE);
+});
+
 await check('ingressos: comprar com Pix (2 pessoas) e com cartão', async () => {
   await page.goto(BASE + '/evento/e3');
   await visible('a partir de R$', { exact: false });
@@ -316,6 +328,7 @@ await check('ingressos: meus ingressos e portaria (entra uma vez só)', async ()
   await page.goto(BASE + '/ingressos');
   await visible('Calourada de Fim de Ano');
   await page.getByRole('link', { name: /Ingresso para Calourada/ }).first().click();
+  await visible('INGRESSO 1 DE', { exact: false });
   const code = await page.evaluate(() => {
     const el = [...document.querySelectorAll('div')].find((d) => /^[A-HJ-NP-Z2-9]{10}$/.test((d.textContent ?? '').trim()) && d.children.length === 0);
     return el?.textContent?.trim();
