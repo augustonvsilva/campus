@@ -4,6 +4,7 @@
 //  • .nojekyll, para o GitHub Pages servir as pastas que começam com "_".
 // Uso: node scripts/web-postbuild.mjs [pasta=dist]
 // Variáveis: EXPO_BASE_URL (ex.: /campus) e SITE_URL (endereço público completo, para a imagem da prévia).
+import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -17,12 +18,14 @@ for (const f of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-
   if (!existsSync(join(dist, f))) throw new Error(`faltou ${f} em ${dist}/ (a pasta public/ é copiada pelo expo export)`);
 }
 
+/** Versão curta do arquivo (hash), para furar o cache do navegador quando ele muda. */
+const v = (f) => createHash('sha1').update(readFileSync(join(dist, f))).digest('hex').slice(0, 8);
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const tags = [
   `<meta name="description" content="${esc(description)}">`,
   '<meta name="theme-color" content="#0A0A0D">',
   `<link rel="manifest" href="${base}/manifest.webmanifest">`,
-  `<link rel="apple-touch-icon" href="${base}/apple-touch-icon.png">`,
+  `<link rel="apple-touch-icon" href="${base}/apple-touch-icon.png?v=${v('apple-touch-icon.png')}">`,
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
@@ -42,7 +45,14 @@ const tags = [
 const indexPath = join(dist, 'index.html');
 let html = readFileSync(indexPath, 'utf8');
 if (!html.includes('rel="manifest"')) {
-  html = html.replace(/<\/head>/i, `    ${tags}\n  </head>`);
+  // Ícone da aba com "versão" (hash do arquivo): quando o ícone muda, o navegador baixa de novo
+  // em vez de mostrar o antigo guardado em cache (o Firefox é o mais teimoso).
+  html = html.replace(/<link rel="icon"[^>]*>/i, '');
+  const icons = [
+    `<link rel="icon" href="${base}/favicon.ico?v=${v('favicon.ico')}" sizes="48x48">`,
+    `<link rel="icon" type="image/png" sizes="192x192" href="${base}/icon-192.png?v=${v('icon-192.png')}">`,
+  ].join('\n    ');
+  html = html.replace(/<\/head>/i, `    ${icons}\n    ${tags}\n  </head>`);
   html = html.replace(/<html(\s[^>]*)?>/i, (m) => (/\blang=/.test(m) ? m.replace(/lang="[^"]*"/, 'lang="pt-BR"') : m.replace('<html', '<html lang="pt-BR"')));
   writeFileSync(indexPath, html);
 }
