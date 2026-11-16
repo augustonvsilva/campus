@@ -1,6 +1,6 @@
-import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useWindowDimensions, View } from 'react-native';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBanner } from '@/components/error-banner';
@@ -31,11 +31,23 @@ export default function RootLayout() {
 /** Remonta tudo quando o tema muda (as cores são lidas na hora de desenhar). */
 function ThemedRoot() {
   const { themeKey } = useStore();
+  const base = themeMode() === 'light' ? DefaultTheme : DarkTheme;
+  // Cores da navegação. No navegador o fundo é transparente para o logo aparecer atrás dos cartões.
+  const navTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      background: Platform.OS === 'web' ? 'transparent' : colors.bg,
+      card: colors.bg, text: colors.text, border: colors.border, primary: colors.accent,
+    },
+  };
   return (
-    <View key={themeKey} style={{ flex: 1 }}>
-      <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
-      <Shell />
-    </View>
+    <ThemeProvider value={navTheme}>
+      <View key={themeKey} style={{ flex: 1 }}>
+        <StatusBar style={themeMode() === 'light' ? 'dark' : 'light'} />
+        <Shell />
+      </View>
+    </ThemeProvider>
   );
 }
 
@@ -80,12 +92,12 @@ function RootStack() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
+        headerStyle: { backgroundColor: Platform.OS === 'web' ? 'transparent' : colors.bg },
         headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: '900' },
         headerTransparent: false,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.bg },
+        contentStyle: { backgroundColor: Platform.OS === 'web' ? 'transparent' : colors.bg },
       }}>
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

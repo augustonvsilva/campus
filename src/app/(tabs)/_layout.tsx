@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, Tabs } from 'expo-router';
-import { ColorValue, Pressable, View } from 'react-native';
+import { ColorValue, Platform, Pressable, View } from 'react-native';
 
 import type { IconName } from '@/components/ui';
 import { useStore } from '@/lib/store';
@@ -51,7 +51,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accentSoft,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontWeight: '900', fontSize: 11, letterSpacing: 0.3 },
-        sceneStyle: { backgroundColor: colors.bg },
+        sceneStyle: { backgroundColor: Platform.OS === 'web' ? 'transparent' : colors.bg },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Início', tabBarIcon: icon('home') }} />
       <Tabs.Screen name="agora" options={{ title: 'Agora', tabBarIcon: icon('flash') }} />

@@ -3,7 +3,7 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import {
-  Image, Pressable, StyleProp, StyleSheet, Switch, Text, TextInput, TextInputProps, useWindowDimensions, View, ViewStyle,
+  Image, Platform, Pressable, StyleProp, StyleSheet, Switch, Text, TextInput, TextInputProps, useWindowDimensions, View, ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -459,7 +459,7 @@ const makeStyles = () => StyleSheet.create({
   },
   badgeText: { fontSize: 11, fontWeight: '800' },
   card: {
-    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 18, gap: 12,
+    backgroundColor: colors.cardBg, borderRadius: radius.lg, padding: 18, gap: 12,
     borderWidth: 1, borderColor: colors.border, ...hardShadow(3),
   },
   cardPressed: { opacity: 0.88, transform: [{ scale: 0.995 }] },
@@ -484,7 +484,9 @@ const makeStyles = () => StyleSheet.create({
   emptyTitle: { color: colors.text, fontSize: 16, fontWeight: '900' },
   notice: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1, borderLeftWidth: 4, alignItems: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  screen: { flex: 1, backgroundColor: colors.bg },
+  // No navegador a tela é transparente (o fundo com o logo aparece atrás dos cartões);
+  // no app nativo fica opaca, para as telas não se sobreporem nas transições.
+  screen: { flex: 1, backgroundColor: Platform.OS === 'web' ? 'transparent' : colors.bg },
   content: { padding: 16, gap: 16, paddingBottom: 96 },
   bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, gap: 4 },
   bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 6, ...glow(0.4) },

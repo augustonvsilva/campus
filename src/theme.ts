@@ -27,6 +27,8 @@ const dark = {
   online: '#34D399',
   /** Fundos translúcidos (menu lateral, barra de abas). */
   glass: 'rgba(14,14,18,0.86)',
+  /** Fundo dos cartões: um pouco transparente, deixa ver o logo do fundo. */
+  cardBg: 'rgba(22,22,27,0.6)',
   /** Item ativo do menu. */
   navActiveBg: 'rgba(240,25,47,0.14)',
   navActiveBorder: 'rgba(240,25,47,0.45)',
@@ -61,6 +63,7 @@ const light: typeof dark = {
   info: '#0B79A8',
   online: '#16A34A',
   glass: 'rgba(255,255,255,0.88)',
+  cardBg: 'rgba(255,255,255,0.66)',
   navActiveBg: 'rgba(227,19,42,0.09)',
   navActiveBorder: 'rgba(227,19,42,0.32)',
   navText: '#3A3A44',
