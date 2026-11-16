@@ -177,9 +177,50 @@ export interface CampusEvent {
   groupId?: ID;
   createdBy?: ID;
   ticketUrl?: string;
+  /** Venda de ingressos pelo próprio Campus (por enquanto só no modo demonstração). */
+  ticketing?: Ticketing;
   sponsored?: boolean;
   interested: ID[];
   going: ID[];
+}
+
+/** Lote/tipo de ingresso (1º lote, meia, open bar…). Preço em centavos. */
+export interface TicketLot {
+  id: ID;
+  name: string;
+  priceCents: number;
+  quantity: number;
+  /** Já vendidos fora deste aparelho (base da demonstração). */
+  sold: number;
+}
+
+export interface Ticketing {
+  lots: TicketLot[];
+  /** Chave Pix de quem recebe (organização). */
+  pixKey: string;
+  /** Nome que aparece no Pix (recebedor). */
+  receiver: string;
+}
+
+export type PaymentMethod = 'pix' | 'cartao';
+
+/** Ingresso emitido: um por pessoa, com QR code próprio. */
+export interface Ticket {
+  id: ID;
+  orderId: ID;
+  eventId: ID;
+  lotId: ID;
+  buyerId: ID;
+  holderName: string;
+  email: string;
+  priceCents: number;
+  method: PaymentMethod;
+  /** Cartão: só bandeira e 4 últimos dígitos (o número nunca é guardado). */
+  cardLabel?: string;
+  /** Código lido na portaria (também vai no QR). */
+  code: string;
+  createdAt: number;
+  checkedInAt?: number;
 }
 
 /** comunidade = aparece para todos; link = só quem recebe o link. */

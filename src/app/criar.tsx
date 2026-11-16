@@ -3,9 +3,10 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
-import { Button, Chip, ChipRow, Field, Notice, styles, ToggleRow, VerifyPrompt } from '@/components/ui';
+import { Button, Card, Chip, ChipRow, Field, Notice, styles, ToggleRow, VerifyPrompt } from '@/components/ui';
 import { EVENT_CATEGORIES } from '@/lib/labels';
 import { canPublish, LocalImage, useMe, useStore } from '@/lib/store';
+import { parseBRL } from '@/lib/tickets';
 import { at, HOUR, MIN, parseDateTime, useNow, when, whenInline } from '@/lib/time';
 import type { BoraVisibility, EventCategory } from '@/lib/types';
 
@@ -250,8 +251,13 @@ function BoraForm({ initialActivity, initialPlace }: { initialActivity?: string;
   );
 }
 
+interface LotDraft { name: string; price: string; quantity: string }
+
 function EventForm({ groupId, organizerName }: { groupId?: string; organizerName?: string }) {
-  const { actions } = useStore();
+  const { actions, ticketsEnabled } = useStore();
+  const [selling, setSelling] = useState(false);
+  const [lots, setLots] = useState<LotDraft[]>([{ name: '1º lote', price: '', quantity: '' }]);
+  const [pixKey, setPixKey] = useState('');
   const me = useMe();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<EventCategory>('encontro');
@@ -265,13 +271,21 @@ function EventForm({ groupId, organizerName }: { groupId?: string; organizerName
 
   const startsAt = parseDateTime(date, time);
   const urlOk = !ticketUrl.trim() || /^https?:\/\/\S+\.\S+/.test(ticketUrl.trim());
-  const valid = title.trim().length >= 3 && startsAt !== null && location.trim().length >= 3 && organizer.trim() && urlOk;
+  const parsedLots = lots.map((l) => ({ name: l.name.trim(), priceCents: parseBRL(l.price), quantity: Number(l.quantity) }));
+  const lotsOk = !selling || (pixKey.trim().length >= 5 && parsedLots.every((l) =>
+    l.name.length >= 2 && l.priceCents !== null && l.priceCents >= 100 && Number.isInteger(l.quantity) && l.quantity >= 1 && l.quantity <= 5000));
+  const valid = title.trim().length >= 3 && startsAt !== null && location.trim().length >= 3 && organizer.trim() && urlOk && lotsOk;
+  const setLot = (i: number, patch: Partial<LotDraft>) => setLots((list) => list.map((l, j) => (j === i ? { ...l, ...patch } : l)));
 
   const submit = () => {
     if (startsAt === null) return;
     const id = actions.addEvent({
       title: title.trim(), category, startsAt, endsAt: startsAt + duration * HOUR, location: location.trim(),
       description: description.trim(), organizer: organizer.trim(), ticketUrl: ticketUrl.trim() || undefined, groupId,
+      ticketing: selling ? {
+        pixKey: pixKey.trim(), receiver: organizer.trim(),
+        lots: parsedLots.map((l, i) => ({ id: `${Date.now().toString(36)}-${i}`, name: l.name, priceCents: l.priceCents!, quantity: l.quantity, sold: 0 })),
+      } : undefined,
     });
     router.replace(`/evento/${id}`);
   };
@@ -301,8 +315,42 @@ function EventForm({ groupId, organizerName }: { groupId?: string; organizerName
       <Field label="Local" value={location} onChangeText={setLocation} maxLength={100} />
       {groupId ? <Text style={styles.hint}>Organização: {organizer}</Text> : <Field label="Organizador" value={organizer} onChangeText={setOrganizer} maxLength={60} />}
       <Field label="Descrição" value={description} onChangeText={setDescription} multiline maxLength={1500} />
-      <Field label="Link de ingressos (opcional)" value={ticketUrl} onChangeText={setTicketUrl} autoCapitalize="none" keyboardType="url"
-        placeholder="https://…" hint={urlOk ? undefined : 'O link precisa começar com https://'} />
+      {ticketsEnabled ? (
+        <Card style={{ gap: 12 }}>
+          <ToggleRow label="Vender ingressos pelo Campus" value={selling} onValueChange={setSelling}
+            hint="Pix e cartão no app; cada pessoa recebe ingresso com QR code e você valida na entrada. (Demonstração: nada é cobrado.)" />
+          {selling ? (
+            <>
+              {lots.map((l, i) => (
+                <View key={i} style={{ gap: 8 }}>
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+                    <View style={{ flex: 2 }}><Field label={`Lote ${i + 1}`} value={l.name} onChangeText={(v) => setLot(i, { name: v })} maxLength={30} placeholder="Ex.: 1º lote, Meia, Open bar" /></View>
+                    {lots.length > 1 ? (
+                      <Button label="" icon="trash-outline" variant="ghost" compact accessibilityLabel={`Remover lote ${i + 1}`}
+                        onPress={() => setLots((list) => list.filter((_, j) => j !== i))} />
+                    ) : null}
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <View style={{ flex: 1 }}><Field label="Preço (R$)" value={l.price} onChangeText={(v) => setLot(i, { price: v })} keyboardType="decimal-pad" placeholder="40,00" /></View>
+                    <View style={{ flex: 1 }}><Field label="Quantidade" value={l.quantity} onChangeText={(v) => setLot(i, { quantity: v.replace(/\D/g, '') })} keyboardType="number-pad" placeholder="200" /></View>
+                  </View>
+                </View>
+              ))}
+              {lots.length < 4 ? (
+                <Button label="Adicionar lote" icon="add" variant="secondary" compact
+                  onPress={() => setLots((list) => [...list, { name: `${list.length + 1}º lote`, price: '', quantity: '' }])} />
+              ) : null}
+              <Field label="Chave Pix de quem recebe" value={pixKey} onChangeText={setPixKey} autoCapitalize="none"
+                placeholder="E-mail, telefone, CPF/CNPJ ou chave aleatória" hint={`Recebedor: ${organizer || 'organização'}`} />
+              {!lotsOk ? <Text style={styles.hint}>Preencha nome, preço (mínimo R$ 1,00) e quantidade de cada lote, e a chave Pix.</Text> : null}
+            </>
+          ) : null}
+        </Card>
+      ) : null}
+      {!selling ? (
+        <Field label="Link de ingressos (opcional)" value={ticketUrl} onChangeText={setTicketUrl} autoCapitalize="none" keyboardType="url"
+          placeholder="https://…" hint={urlOk ? undefined : 'O link precisa começar com https://'} />
+      ) : null}
       <Button label="Publicar evento" icon="calendar" disabled={!valid} onPress={submit} />
     </View>
   );

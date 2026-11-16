@@ -124,6 +124,14 @@ export function seedData(now = Date.now()) {
       location: 'Casa de eventos (endereço de exemplo)', organizer: 'Atléticas reunidas (exemplo)',
       description: 'Festa de encerramento do semestre com DJs da comunidade. Proibida a entrada de menores de 18 anos.',
       ticketUrl: 'https://example.com/ingressos', sponsored: true,
+      ticketing: {
+        pixKey: 'atleticas.reunidas@exemplo.com', receiver: 'Atleticas Reunidas',
+        lots: [
+          { id: 'e3-l1', name: '1º lote', priceCents: 4000, quantity: 200, sold: 200 },
+          { id: 'e3-l2', name: '2º lote', priceCents: 5500, quantity: 300, sold: 212 },
+          { id: 'e3-l3', name: 'Open bar', priceCents: 12000, quantity: 80, sold: 77 },
+        ],
+      },
       interested: ['u_ana', 'u_gabi', 'u_diego'], going: ['u_carla', 'u_bruno'],
     }),
     ev({

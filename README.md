@@ -23,7 +23,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | `npm run typecheck` | Tipos (TypeScript) |
 | `npm run lint` | ESLint |
 | `npm run test:db` | Aplica as migrations num Postgres em memória e roda 177 cenários de segurança: convite, exclusão de conta, edição do próprio conteúdo, central de atividade, nome de usuário único, verificação pelo e-mail institucional, isolamento entre universidades, RLS, lotação de Bora? e saídas, comunidades e admins, moderação e storage |
-| `npm run test:e2e` | 36 fluxos no Chrome headless com o modo demo (precisa do app web rodando em modo demo: sem `.env.local`, ou com `EXPO_PUBLIC_SUPABASE_URL=` vazio) |
+| `npm run test:e2e` | 39 fluxos no Chrome headless com o modo demo (precisa do app web rodando em modo demo: sem `.env.local`, ou com `EXPO_PUBLIC_SUPABASE_URL=` vazio) |
 
 ## Colocar o Supabase no ar
 
@@ -64,6 +64,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 | Site instalável (PWA: ícone na tela inicial) e prévia de link no WhatsApp/Instagram | ✅ |
 | Mensagens privadas | 🧪 só no modo demonstração (ficam no aparelho; respostas automáticas das pessoas fictícias). Falta tabela + RLS no banco |
 | Tema escuro, claro ou do sistema (Perfil → Aparência); logo do Campus no ícone, nos menus e ao fundo | ✅ |
+| Venda de ingressos (Campus como promoter): lotes, Pix com QR e copia e cola (BR Code oficial), cartão com parcelas, ingresso com QR code por pessoa, "Meus ingressos", e-mail, vendas e portaria (entra uma vez só) | 🧪 só no modo demonstração (sem cobrança real). Falta intermediador de pagamento, tabela + RLS e envio de e-mail |
 | Excluir conta (apaga dados e arquivos; comunidades passam ao membro mais antigo) | ✅ |
 | Termos de uso, Política de Privacidade e aviso de não afiliação | ✅ rascunho, revisar com advogado (`src/lib/legal.ts`) |
 | "Esqueci a senha": entra com código por e-mail e cria nova senha; troca de senha no perfil | ✅ |

@@ -95,6 +95,10 @@ function RootStack() {
         <Stack.Screen name="perfil" options={{ title: 'Perfil' }} />
         <Stack.Screen name="atividade" options={{ title: 'Atividade' }} />
         <Stack.Screen name="mensagens/index" options={{ title: 'Mensagens' }} />
+        <Stack.Screen name="ingressos/index" options={{ title: 'Meus ingressos' }} />
+        <Stack.Screen name="ingressos/comprar" options={{ title: 'Comprar ingresso' }} />
+        <Stack.Screen name="ingressos/[id]" options={{ title: 'Ingresso' }} />
+        <Stack.Screen name="ingressos/validar" options={{ title: 'Vendas e portaria' }} />
         <Stack.Screen name="mensagens/[id]" options={{ title: 'Conversa' }} />
         <Stack.Screen name="buscar" options={{ title: 'Buscar' }} />
         <Stack.Screen name="boas-vindas" options={{ headerShown: false, gestureEnabled: false }} />

@@ -281,7 +281,7 @@ function InviteSection() {
 }
 
 export default function Perfil() {
-  const { actions, settings, blocked, users, posts, boras, community, backend, following, groups, verificationRequests } = useStore();
+  const { actions, settings, blocked, users, posts, boras, community, backend, following, groups, verificationRequests, ticketsEnabled } = useStore();
   const me = useMe();
   const evidenceSent = verificationRequests.some((v) => v.userId === me.id && v.evidence);
   const [editing, setEditing] = useState(false);
@@ -384,6 +384,10 @@ export default function Perfil() {
       ) : null}
 
       <PasswordSection />
+
+      {ticketsEnabled ? (
+        <Button label="Meus ingressos" icon="ticket-outline" variant="secondary" onPress={() => router.push('/ingressos')} />
+      ) : null}
 
       <AppearanceSection />
 

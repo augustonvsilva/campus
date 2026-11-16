@@ -17,8 +17,9 @@ import * as remote from './remote';
 import { seedData } from './seed';
 import { supabase, SUPABASE_ENABLED } from './supabase';
 import { HOUR } from './time';
+import { ticketCode } from './tickets';
 import type {
-  Activity, Bora, BoraVisibility, Message, CampusEvent, Comment, CommentTarget, Community, EventCategory, Group, GroupKind, GroupRole, ID, Invite, Place,
+  Activity, Bora, BoraVisibility, Message, PaymentMethod, Ticket, Ticketing, CampusEvent, Comment, CommentTarget, Community, EventCategory, Group, GroupKind, GroupRole, ID, Invite, Place,
   Post, RemovableTarget, Report, ReportTarget, Ride, Settings, User, VerificationRequest,
 } from './types';
 
@@ -60,7 +61,12 @@ interface State {
   activity: Activity[];
   /** Mensagens privadas: só na demo, guardadas no aparelho. */
   messages: Message[];
+  /** Ingressos comprados no aparelho (demo). */
+  tickets: Ticket[];
 }
+
+/** Venda de ingressos pelo Campus: só no modo demonstração (sem intermediador de pagamento ainda). */
+export const TICKETS_ENABLED = !SUPABASE_ENABLED;
 
 /** Mensagens privadas existem só no modo demonstração (ainda não há tabela/RLS no banco). */
 export const MESSAGES_ENABLED = !SUPABASE_ENABLED;
@@ -82,7 +88,7 @@ const defaultSettings: Settings = {
 
 const emptyState = (): State => ({
   session: null, users: {}, posts: [], events: [], boras: [], places: [], reports: [], blocked: [],
-  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {}, passwords: {}, activity: [], messages: [],
+  invites: [], verificationRequests: [], settings: defaultSettings, groups: [], rides: [], following: {}, passwords: {}, activity: [], messages: [], tickets: [],
 });
 
 const demoState = (): State => ({ ...emptyState(), ...seedData() });
@@ -138,6 +144,7 @@ function withoutUser(s: State, m: ID): State {
     verificationRequests: s.verificationRequests.filter((v) => v.userId !== m),
     blocked: notMe(s.blocked),
     messages: s.messages.filter((x) => x.fromId !== m && x.toId !== m),
+    tickets: s.tickets.filter((t) => t.buyerId !== m),
   };
 }
 
@@ -207,6 +214,7 @@ function useCampusState() {
           // Dados salvos por versões anteriores: saídas ainda sem conversa.
           if (saved.rides) saved.rides = saved.rides.map((r) => ({ ...r, comments: r.comments ?? [] }));
           saved.messages = saved.messages ?? [];
+          saved.tickets = saved.tickets ?? [];
           setState({ ...demoState(), ...saved });
         })
         .catch(() => {})
@@ -429,6 +437,50 @@ function useCampusState() {
         }
         setState((s) => withoutUser(s, m));
       },
+      // ── Ingressos (demo) ──
+      /**
+       * Compra: confere o lote e emite um ingresso por pessoa, cada um com código e QR próprios.
+       * Na demo o pagamento é simulado e aprovado; nenhum valor é cobrado e o cartão não é guardado.
+       */
+      buyTickets(input: { eventId: ID; lotId: ID; quantity: number; holderName: string; email: string; method: PaymentMethod; cardLabel?: string }): ID {
+        const m = me();
+        if (!m || !TICKETS_ENABLED) throw new Error('Venda de ingressos indisponível.');
+        const s = stateRef.current;
+        const ev = s.events.find((e) => e.id === input.eventId);
+        const lot = ev?.ticketing?.lots.find((l) => l.id === input.lotId);
+        if (!ev || !lot) throw new Error('Ingresso não encontrado.');
+        if (ev.endsAt < Date.now()) throw new Error('Esse evento já terminou.');
+        const sold = lot.sold + s.tickets.filter((t) => t.lotId === lot.id).length;
+        if (input.quantity < 1 || sold + input.quantity > lot.quantity) throw new Error('Não há ingressos suficientes nesse lote.');
+        const orderId = newId();
+        const now = Date.now();
+        const issued: Ticket[] = Array.from({ length: input.quantity }, (_, i) => ({
+          id: newId(), orderId, eventId: ev.id, lotId: lot.id, buyerId: m,
+          holderName: input.quantity > 1 ? `${input.holderName.trim()} (${i + 1}/${input.quantity})` : input.holderName.trim(),
+          email: input.email.trim().toLowerCase(), priceCents: lot.priceCents, method: input.method, cardLabel: input.cardLabel,
+          code: ticketCode(Crypto.getRandomBytes(10)), createdAt: now,
+        }));
+        setState((x) => ({
+          ...x,
+          tickets: [...x.tickets, ...issued],
+          // Quem compra passa a constar como "vou" no evento.
+          events: x.events.map((e) => (e.id === ev.id && !e.going.includes(m)
+            ? { ...e, going: [...e.going, m], interested: e.interested.filter((u) => u !== m) } : e)),
+        }));
+        return issued[0]!.id;
+      },
+      /** Portaria: valida o código e marca a entrada (cada ingresso entra uma vez). */
+      checkInTicket(eventId: ID, rawCode: string): { status: 'ok' | 'usado' | 'invalido' | 'outro_evento'; ticket?: Ticket } {
+        const code = rawCode.trim().toUpperCase().replace(/^CAMPUS:/, '').replace(/[^A-Z0-9]/g, '');
+        const t = stateRef.current.tickets.find((x) => x.code === code);
+        if (!t) return { status: 'invalido' };
+        if (t.eventId !== eventId) return { status: 'outro_evento', ticket: t };
+        if (t.checkedInAt) return { status: 'usado', ticket: t };
+        const at = Date.now();
+        setState((x) => ({ ...x, tickets: x.tickets.map((y) => (y.id === t.id ? { ...y, checkedInAt: at } : y)) }));
+        return { status: 'ok', ticket: { ...t, checkedInAt: at } };
+      },
+
       // ── Mensagens privadas (demo) ──
       sendMessage(toId: ID, text: string) {
         const m = me();
@@ -645,7 +697,7 @@ function useCampusState() {
       },
       addEvent(input: {
         title: string; category: EventCategory; startsAt: number; endsAt: number;
-        location: string; description: string; organizer: string; ticketUrl?: string; groupId?: ID;
+        location: string; description: string; organizer: string; ticketUrl?: string; groupId?: ID; ticketing?: Ticketing;
       }) {
         const m = me();
         if (!m) return '';
@@ -875,7 +927,7 @@ function useCampusState() {
 
   return {
     ...state, hydrated: hydrated && prefsReady, error, refreshing, me, actions, isVisible,
-    activity, activitySeenAt, unreadActivity, onboarded, themePref: prefs.theme, themeKey, conversations, unreadMessages, messagesEnabled: MESSAGES_ENABLED,
+    activity, activitySeenAt, unreadActivity, onboarded, themePref: prefs.theme, themeKey, conversations, unreadMessages, messagesEnabled: MESSAGES_ENABLED, ticketsEnabled: TICKETS_ENABLED,
     community: ACTIVE_COMMUNITY as Community,
     backend: SUPABASE_ENABLED ? ('supabase' as const) : ('demo' as const),
   };

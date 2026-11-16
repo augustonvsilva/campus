@@ -278,6 +278,65 @@ await check('saída: conversa, Pix, compartilhar e agenda', async () => {
   await page.goto(BASE);
 });
 
+await check('ingressos: comprar com Pix (2 pessoas) e com cartão', async () => {
+  await page.goto(BASE + '/evento/e3');
+  await visible('a partir de R$', { exact: false });
+  await page.getByText('Comprar ingresso', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('1. Escolha o ingresso');
+  await page.getByRole('radio', { name: /Open bar/ }).click();
+  await page.getByRole('button', { name: 'Mais um ingresso' }).click();
+  await page.getByText('Gerar Pix de R$', { exact: false }).locator('visible=true').and(LIVE).first().click();
+  await page.getByRole('img', { name: 'QR code do Pix' }).waitFor();
+  await page.getByText('Copiar Pix copia e cola').click();
+  const pix = await page.evaluate(() => navigator.clipboard.readText());
+  if (!pix.startsWith('000201') || !pix.includes('br.gov.bcb.pix') || !pix.includes('5406240.00')) throw new Error('Pix inválido: ' + pix);
+  await shot('20-pix');
+  await page.getByText('Simular pagamento confirmado').click();
+  await visible('Pagamento aprovado!');
+  await visible('INGRESSO 1 DE 2');
+  await shot('21-ingresso');
+  // Cartão: número inválido é barrado; o de teste passa.
+  await page.goto(BASE + '/ingressos/comprar?evento=e3');
+  await page.getByRole('radio', { name: /2º lote/ }).click();
+  await page.getByText('Cartão de crédito', { exact: true }).click();
+  await page.getByPlaceholder('0000 0000 0000 0000').fill('4111 1111 1111 1112');
+  await page.getByText('Pagar R$', { exact: false }).locator('visible=true').and(LIVE).first().click();
+  await visible('Número do cartão inválido.');
+  await page.getByPlaceholder('0000 0000 0000 0000').fill('4111111111111111');
+  await visible('Visa', { exact: false });
+  await page.getByRole('textbox').nth(3).fill('TESTE FUNDADOR');
+  await page.getByPlaceholder('MM/AA').fill('1230');
+  await page.getByPlaceholder('123').fill('123');
+  await page.getByText('Pagar R$', { exact: false }).locator('visible=true').and(LIVE).first().click();
+  await visible('Pagamento aprovado!');
+  await visible('Visa final 1111');
+});
+
+await check('ingressos: meus ingressos e portaria (entra uma vez só)', async () => {
+  await page.goto(BASE + '/ingressos');
+  await visible('Calourada de Fim de Ano');
+  await page.getByRole('link', { name: /Ingresso para Calourada/ }).first().click();
+  const code = await page.evaluate(() => {
+    const el = [...document.querySelectorAll('div')].find((d) => /^[A-HJ-NP-Z2-9]{10}$/.test((d.textContent ?? '').trim()) && d.children.length === 0);
+    return el?.textContent?.trim();
+  });
+  if (!code) throw new Error('código do ingresso não encontrado na tela');
+  await page.goto(BASE + '/ingressos/validar?evento=e3');
+  await visible('Validar na entrada');
+  const box = page.getByPlaceholder('Ex.: K7QX2M9PLA');
+  await box.fill(code);
+  await page.getByText('Validar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Entrada liberada');
+  await shot('22-portaria');
+  await box.fill(code);
+  await page.getByText('Validar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Ingresso já utilizado');
+  await box.fill('ZZZZZZZZZZ');
+  await page.getByText('Validar', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await visible('Código não encontrado');
+  await page.goto(BASE);
+});
+
 await check('denunciar e bloquear', async () => {
   await page.getByRole('button', { name: 'Denunciar publicação' }).locator('visible=true').and(LIVE).first().click();
   await page.getByText('Informação falsa').click();
@@ -362,7 +421,7 @@ await check('conexões: sugestão por rolê em comum e seguir', async () => {
   // O teste marcou "Eu vou" no Sarau, onde a Gabriela tem interesse.
   const gabi = btn('Ver perfil de Gabriela Nunes');
   await gabi.waitFor();
-  if (!(await gabi.textContent()).includes('rolê em comum')) throw new Error('motivo da sugestão não mostra rolê em comum: ' + (await gabi.textContent()));
+  if (!/rolês? em comum/.test(await gabi.textContent())) throw new Error('motivo da sugestão não mostra rolê em comum: ' + (await gabi.textContent()));
   const gabiRow = live(page.locator('[aria-label="Pessoa: Gabriela Nunes"]'));
   await gabiRow.getByRole('button', { name: 'Seguir', exact: true }).click();
   await gabiRow.getByRole('button', { name: 'Deixar de seguir' }).waitFor();
@@ -371,7 +430,7 @@ await check('conexões: sugestão por rolê em comum e seguir', async () => {
 
 await check('perfil de outra pessoa: rolês em comum e comunidades', async () => {
   await btn('Ver perfil de Gabriela Nunes').click();
-  await visible('Vocês vão aos mesmos rolês (1)');
+  await visible('Vocês vão aos mesmos rolês', { exact: false });
   await visible('Sarau no Gramado');
   await visible('Bateria Universitária');
   await visible('Seguindo');

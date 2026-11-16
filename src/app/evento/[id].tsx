@@ -7,13 +7,14 @@ import { openGroup, RideCard } from '@/components/social';
 import { Avatar, Badge, Button, Card, Empty, IconName, Section, styles } from '@/components/ui';
 import { eventCategory } from '@/lib/labels';
 import { followingOf } from '@/lib/social';
-import { useMe, useStore } from '@/lib/store';
+import { isModerator, useMe, useStore } from '@/lib/store';
+import { brl, canManageEvent, remainingOf } from '@/lib/tickets';
 import { hhmm, useNow, when } from '@/lib/time';
 import { colors } from '@/theme';
 
 export default function EventoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { events, actions, groups, rides, following, users } = useStore();
+  const { events, actions, groups, rides, following, users, tickets, ticketsEnabled } = useStore();
   const me = useMe();
   const now = useNow();
   const event = events.find((e) => e.id === id);
@@ -33,6 +34,48 @@ export default function EventoScreen() {
   const myFollowing = new Set(followingOf(following, me.id));
   const friendsGoing = [...event.going, ...event.interested].filter((uid, i, arr) => arr.indexOf(uid) === i && myFollowing.has(uid))
     .map((uid) => users[uid]).filter((u): u is NonNullable<typeof u> => !!u);
+
+  const myTickets = tickets.filter((t) => t.eventId === event.id && t.buyerId === me.id);
+  const manager = canManageEvent(event, me.id, isGroupAdmin, isModerator(me));
+
+  /** Ingressos vendidos pelo Campus: lotes, comprar, meus ingressos e (organização) portaria. */
+  const ticketsSection = event.ticketing ? (() => {
+    const lots = event.ticketing.lots;
+    const from = Math.min(...lots.filter((l) => remainingOf(l, tickets) > 0).map((l) => l.priceCents));
+    const soldOut = !Number.isFinite(from);
+    return (
+      <Card style={{ gap: 12, borderColor: colors.navActiveBorder }}>
+        <View style={[styles.row, { justifyContent: 'space-between' }]}>
+          <View style={[styles.row, { gap: 8 }]}>
+            <Ionicons name="ticket" size={20} color={colors.accentSoft} />
+            <Text style={styles.title}>Ingressos</Text>
+          </View>
+          {!soldOut ? <Text style={styles.label}>a partir de {brl(from)}</Text> : <Badge label="Esgotado" tone="warn" />}
+        </View>
+        {lots.map((l) => {
+          const left = remainingOf(l, tickets);
+          return (
+            <View key={l.id} style={[styles.row, { justifyContent: 'space-between' }]}>
+              <Text style={[styles.body, !left && { color: colors.muted, textDecorationLine: 'line-through' }]}>{l.name}</Text>
+              <Text style={[styles.label, !left && { color: colors.muted }]}>{left ? brl(l.priceCents) : 'Esgotado'}</Text>
+            </View>
+          );
+        })}
+        {!ended && !soldOut ? (
+          <Button label="Comprar ingresso" icon="ticket-outline" onPress={() => router.push({ pathname: '/ingressos/comprar', params: { evento: event.id } })} />
+        ) : null}
+        {myTickets.length ? (
+          <Button label={`Ver meu${myTickets.length > 1 ? 's' : ''} ingresso${myTickets.length > 1 ? 's' : ''} (${myTickets.length})`} icon="qr-code-outline" variant="secondary"
+            onPress={() => router.push({ pathname: '/ingressos/[id]', params: { id: myTickets[0]!.id } })} />
+        ) : null}
+        {manager ? (
+          <Button label="Vendas e portaria" icon="scan-outline" variant="ghost" compact
+            onPress={() => router.push({ pathname: '/ingressos/validar', params: { evento: event.id } })} />
+        ) : null}
+        <Text style={styles.hint}>Pix ou cartão. O ingresso chega no app e no seu e-mail, com QR code.</Text>
+      </Card>
+    );
+  })() : null;
 
   const info = (icon: IconName, text: string) => (
     <View style={[styles.row, { alignItems: 'flex-start' }]}>
@@ -99,7 +142,9 @@ export default function EventoScreen() {
         </View>
       ) : null}
 
-      {event.ticketUrl && !ended ? (
+      {ticketsEnabled && event.ticketing ? (
+        ticketsSection
+      ) : event.ticketUrl && !ended ? (
         <Button label="Comprar ingresso" icon="ticket-outline" variant="secondary" onPress={() => Linking.openURL(event.ticketUrl!)} />
       ) : null}
 

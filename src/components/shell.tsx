@@ -44,13 +44,14 @@ function NavLink({ item }: { item: NavItem }) {
 }
 
 export function Sidebar() {
-  const { community, unreadActivity, unreadMessages, messagesEnabled } = useStore();
+  const { community, unreadActivity, unreadMessages, messagesEnabled, ticketsEnabled } = useStore();
   const items: NavItem[] = [
     { label: 'Início', icon: 'home', href: '/', match: (p) => p === '/' },
     { label: 'Explorar', icon: 'compass-outline', href: '/explorar', match: (p) => p.startsWith('/explorar') || p.startsWith('/lugar') },
     { label: 'Notificações', icon: 'notifications-outline', href: '/atividade', match: (p) => p.startsWith('/atividade'), badge: unreadActivity },
     ...(messagesEnabled ? [{ label: 'Mensagens', icon: 'mail-outline' as IconName, href: '/mensagens', match: (p: string) => p.startsWith('/mensagens'), badge: unreadMessages }] : []),
     { label: 'Eventos', icon: 'calendar-outline', href: '/eventos', match: (p) => p.startsWith('/eventos') || p.startsWith('/evento/') },
+    ...(ticketsEnabled ? [{ label: 'Ingressos', icon: 'ticket-outline' as IconName, href: '/ingressos', match: (p: string) => p.startsWith('/ingressos') }] : []),
     { label: 'Agora', icon: 'flash-outline', href: '/agora', match: (p) => p.startsWith('/agora') || p.startsWith('/bora') },
     { label: 'Comunidades', icon: 'people-outline', href: '/explorar?aba=comunidades', match: (p) => p.startsWith('/comunidade') },
     { label: 'Configurações', icon: 'settings-outline', href: '/perfil', match: (p) => p.startsWith('/perfil') },
