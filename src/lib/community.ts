@@ -31,13 +31,15 @@ export const MACKENZIE: Community = {
   courses: [...PRESENCIAL, ...EAD].sort((a, b) => a.localeCompare(b, 'pt-BR')),
   // Códigos de demonstração. No backend, convites são individuais e têm limite de uso.
   inviteCodes: ['MACK2026', 'FUNDADORES'],
-  // Foto livre do Wikimedia Commons (vista aérea, sem logo). A licença exige o crédito, que aparece no app.
+  // Foto livre do Wikimedia Commons (Bosque das Fadas, com o letreiro), em dois recortes:
+  // celular e computador. A licença exige o crédito, que aparece no app.
   cover: {
     source: require('../../assets/campus/mackenzie.jpg'),
-    author: 'Charlesblack',
-    license: 'CC BY-SA 1.0',
-    url: 'https://commons.wikimedia.org/wiki/File:McKenzie_University_(4).jpg',
-    place: 'Campus Higienópolis',
+    sourceWide: require('../../assets/campus/mackenzie-largo.jpg'),
+    author: 'Luiz de Visconte',
+    license: 'CC BY-SA 4.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Mackcapus2.jpg',
+    place: 'Bosque das Fadas, Campus Higienópolis',
   },
 };
 

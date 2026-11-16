@@ -31,6 +31,8 @@ export interface CampusPhoto {
   url: string;
   /** Ex.: "Campus Higienópolis". */
   place: string;
+  /** Recorte mais largo para a capa do computador (faixa bem baixa). Sem ele, usa `source`. */
+  sourceWide?: number | { uri: string };
 }
 
 /**

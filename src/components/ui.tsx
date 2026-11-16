@@ -71,11 +71,12 @@ const textOnPhoto = () => ({ textShadowColor: themeMode() === 'light' ? 'rgba(25
 /** Foto do campus como capa do topo das abas, atenuada para o título continuar legível. */
 function CoverPhoto() {
   const { community } = useStore();
+  const wide = useWide();
   const cover = community.cover;
   if (!cover) return null;
   return (
     <>
-      <Image source={cover.source} resizeMode="cover" accessibilityIgnoresInvertColors
+      <Image source={(wide && cover.sourceWide) || cover.source} resizeMode="cover" accessibilityIgnoresInvertColors
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
       <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bg, opacity: themeMode() === 'light' ? 0.42 : 0.32 }} />
     </>
