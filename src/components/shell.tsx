@@ -201,13 +201,13 @@ export function RightRail() {
   );
 }
 
-/** Fundo do computador: brilho suave e o logo do Campus bem apagado. */
+/** Fundo do computador: brilho suave e o logo do Campus em marca d'água bem visível. */
 export function BackgroundGlow() {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
       <View style={{ position: 'absolute', top: -140, left: 160, width: 240, height: 240, borderRadius: 120, backgroundColor: `rgba(${colors.glowRgb},0.06)`, boxShadow: `0 0 220px 150px rgba(${colors.glowRgb},0.07)` }} />
       {/* O logo do Campus, grande e apagado, ao fundo (como a marca d'água do modelo). */}
-      <BrandWatermark size={760} opacity={themeMode() === 'light' ? 0.05 : 0.07} style={{ right: -170, bottom: -170 }} />
+      <BrandWatermark size={860} opacity={themeMode() === 'light' ? 0.11 : 0.17} style={{ right: -240, bottom: -120 }} />
     </View>
   );
 }
