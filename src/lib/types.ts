@@ -15,6 +15,22 @@ export interface Community {
   courses: string[];
   /** Códigos de convite válidos (no backend real, vêm da tabela `invites`). */
   inviteCodes: string[];
+  /** Foto do campus usada como fundo. Sem ela, o fundo mostra só o logo do Campus. */
+  cover?: CampusPhoto;
+}
+
+/** Foto de fundo de uma universidade: precisa ter licença que permita o uso, com crédito. */
+export interface CampusPhoto {
+  /** Arquivo local (require) ou endereço da imagem. */
+  source: number | { uri: string };
+  /** Ex.: "Charlesblack". */
+  author: string;
+  /** Ex.: "CC BY-SA 1.0". */
+  license: string;
+  /** Página da foto (onde estão autor e licença). */
+  url: string;
+  /** Ex.: "Campus Higienópolis". */
+  place: string;
 }
 
 /**

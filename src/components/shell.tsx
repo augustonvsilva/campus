@@ -3,7 +3,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { canPublish, useMe, useStore } from '@/lib/store';
 import { useNow } from '@/lib/time';
@@ -78,6 +78,7 @@ export function Sidebar() {
         </Pressable>
         <View style={{ flex: 1 }} />
         <InviteCard />
+        <PhotoCredit style={{ marginTop: -10 }} />
       </ScrollView>
     </View>
   );
@@ -215,11 +216,36 @@ export function MobileWatermark() {
 
 /** Fundo do computador: brilho suave e o logo do Campus em marca d'água bem visível. */
 export function BackgroundGlow() {
+  const { community } = useStore();
+  const cover = community.cover;
+  const light = themeMode() === 'light';
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
-      <View style={{ position: 'absolute', top: -140, left: 160, width: 240, height: 240, borderRadius: 120, backgroundColor: `rgba(${colors.glowRgb},0.06)`, boxShadow: `0 0 220px 150px rgba(${colors.glowRgb},0.07)` }} />
-      {/* O logo do Campus, grande e apagado, ao fundo (como a marca d'água do modelo). */}
-      <BrandWatermark size={860} opacity={themeMode() === 'light' ? 0.11 : 0.17} style={{ right: -240, bottom: -120 }} />
+    <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
+      {cover ? (
+        <>
+          {/* Foto do campus da universidade, atenuada para o conteúdo continuar legível. */}
+          <Image source={cover.source} resizeMode="cover" blurRadius={1} accessibilityIgnoresInvertColors
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
+          <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bg, opacity: light ? 0.7 : 0.62 }} />
+        </>
+      ) : null}
+      <View pointerEvents="none" style={{ position: 'absolute', top: -140, left: 160, width: 240, height: 240, borderRadius: 120, backgroundColor: `rgba(${colors.glowRgb},0.06)`, boxShadow: `0 0 220px 150px rgba(${colors.glowRgb},0.07)` }} />
+      {cover ? null : (
+        // Sem foto: o logo do Campus, grande e apagado, ao fundo.
+        <BrandWatermark size={860} opacity={light ? 0.11 : 0.17} style={{ right: -240, bottom: -120 }} />
+      )}
     </View>
+  );
+}
+
+/** Crédito obrigatório da foto de fundo (autor e licença), com link para a origem. */
+export function PhotoCredit({ style }: { style?: object }) {
+  const { community } = useStore();
+  const cover = community.cover;
+  if (!cover) return null;
+  return (
+    <Text style={[styles.hint, { fontSize: 11 }, style]} accessibilityRole="link" onPress={() => Linking.openURL(cover.url)}>
+      Foto de fundo: {cover.place} · {cover.author} · {cover.license}
+    </Text>
   );
 }

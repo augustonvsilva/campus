@@ -7,6 +7,7 @@ import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'rea
 
 import { Avatar, Badge, Button, Card, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, Section, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { HANDLE_MAX, normalizeHandle } from '@/lib/handle';
+import { PhotoCredit } from '@/components/shell';
 import { GroupCard } from '@/components/social';
 import { pickAvatar } from '@/lib/images';
 import { NOT_AFFILIATED } from '@/lib/legal';
@@ -448,6 +449,7 @@ export default function Perfil() {
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </Pressable>
           <Text style={styles.hint}>{NOT_AFFILIATED}</Text>
+          <PhotoCredit />
         </Card>
       </Section>
 
