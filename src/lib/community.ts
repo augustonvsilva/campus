@@ -34,13 +34,15 @@ export const MACKENZIE: Community = {
   courses: [...PRESENCIAL, ...EAD].sort((a, b) => a.localeCompare(b, 'pt-BR')),
   // Códigos de demonstração. No backend, convites são individuais e têm limite de uso.
   inviteCodes: ['MACK2026', 'FUNDADORES'],
-  // Letreiro #MACKENZIE (Campus Higienópolis), enviada pela equipe. Autor e licença a confirmar:
-  // antes do lançamento, trocar por foto própria/autorizada ou preencher author/license/url.
+  // Foto livre do Wikimedia Commons (Bosque das Fadas, com o letreiro), em dois recortes:
+  // celular e computador. A licença exige o crédito, que aparece no app.
   cover: {
     source: require('../../assets/campus/mackenzie.jpg'),
     sourceWide: require('../../assets/campus/mackenzie-largo.jpg'),
-    sourceWideLight: require('../../assets/campus/mackenzie-largo-claro.jpg'),
-    place: 'Letreiro, Campus Higienópolis',
+    author: 'Luiz de Visconte',
+    license: 'CC BY-SA 4.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Mackcapus2.jpg',
+    place: 'Bosque das Fadas, Campus Higienópolis',
   },
 };
 
