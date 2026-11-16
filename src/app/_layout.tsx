@@ -4,32 +4,61 @@ import { useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBanner } from '@/components/error-banner';
+import { BackgroundGlow, RightRail, Sidebar, TopBar } from '@/components/shell';
+import { WIDE } from '@/components/ui';
 import { isModerator, StoreProvider, useStore } from '@/lib/store';
 import { colors } from '@/theme';
 
-/** Largura máxima do conteúdo. No celular não faz diferença; em tablet e desktop vira uma coluna central. */
-const MAX_WIDTH = 640;
+/** Largura máxima da coluna de conteúdo (feed e telas). */
+const MAX_WIDTH = 760;
+/** A partir desta largura aparece também a coluna da direita (em alta, pessoas). */
+const RAIL = 1320;
 
 export default function RootLayout() {
-  const { width } = useWindowDimensions();
-  const wide = width > MAX_WIDTH;
-
   return (
     <SafeAreaProvider>
       <StoreProvider>
         <StatusBar style="light" />
-        <View style={{ flex: 1, alignItems: 'center', backgroundColor: wide ? '#07080B' : colors.bg }}>
-          <View
-            style={[
-              { flex: 1, width: '100%', maxWidth: MAX_WIDTH, backgroundColor: colors.bg },
-              wide && { borderLeftWidth: 2, borderRightWidth: 2, borderColor: colors.border },
-            ]}>
+        <Shell />
+      </StoreProvider>
+    </SafeAreaProvider>
+  );
+}
+
+/**
+ * Celular: só a pilha de telas. Computador (logado): menu lateral, barra superior,
+ * coluna central e, em telas bem largas, a coluna da direita.
+ */
+function Shell() {
+  const { width } = useWindowDimensions();
+  const { session } = useStore();
+  const wide = width >= WIDE && !!session;
+
+  if (!wide) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', backgroundColor: width > 640 ? '#07060B' : colors.bg }}>
+        <View style={[{ flex: 1, width: '100%', maxWidth: 640, backgroundColor: colors.bg }, width > 640 && { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border }]}>
+          <RootStack />
+          <ErrorBanner />
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.bg }}>
+      <BackgroundGlow />
+      <Sidebar />
+      <View style={{ flex: 1 }}>
+        <TopBar />
+        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 24, paddingLeft: 24 }}>
+          <View style={{ flex: 1, maxWidth: MAX_WIDTH, borderRadius: 18, overflow: 'hidden' }}>
             <RootStack />
             <ErrorBanner />
           </View>
+          {width >= RAIL ? <RightRail /> : null}
         </View>
-      </StoreProvider>
-    </SafeAreaProvider>
+      </View>
+    </View>
   );
 }
 

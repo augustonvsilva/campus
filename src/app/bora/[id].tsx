@@ -32,7 +32,7 @@ export default function BoraScreen() {
         {bora.cancelled ? <Notice tone="warn" icon="close-circle" text="Este plano foi cancelado por quem criou." /> : null}
 
         <View style={{ gap: 8 }}>
-          <Text style={[styles.label, { color: colors.accent }]}>BORA? · {relativeStart(bora.startsAt, now).toUpperCase()}</Text>
+          <Text style={[styles.label, { color: colors.accentSoft }]}>BORA? · {relativeStart(bora.startsAt, now).toUpperCase()}</Text>
           <Text style={[styles.h1, { fontSize: 30 }]}>{bora.activity}</Text>
           <View style={styles.row}>
             <Avatar user={author} size={26} />

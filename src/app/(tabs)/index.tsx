@@ -1,14 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { PostCard } from '@/components/cards';
 import { FollowButton, openProfile } from '@/components/social';
-import { Avatar, Chip, ChipRow, Empty, styles, TabHeader, VerifyPrompt } from '@/components/ui';
+import { Avatar, Chip, useWide, Empty, styles, TabHeader, VerifyPrompt } from '@/components/ui';
 import { canPublish, useMe, useStore } from '@/lib/store';
 import { followingOf, suggestPeople } from '@/lib/social';
 import { useNow } from '@/lib/time';
-import { colors, radius } from '@/theme';
+import { colors, glow, radius } from '@/theme';
 
 type Feed = 'para-voce' | 'seguindo';
 
@@ -25,14 +26,14 @@ function PeopleStrip() {
     <View style={{ gap: 10 }}>
       <View style={[styles.row, { justifyContent: 'space-between' }]}>
         <Text style={styles.sectionTitle}>Conecte-se</Text>
-        <Text style={[styles.label, { color: colors.accent }]} onPress={() => router.push({ pathname: '/explorar', params: { aba: 'pessoas' } })}>
+        <Text style={[styles.label, { color: colors.accentSoft }]} onPress={() => router.push({ pathname: '/explorar', params: { aba: 'pessoas' } })}>
           Ver mais
         </Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
         {people.map(({ user, reason }) => (
           <View key={user.id}
-            style={{ width: 150, alignItems: 'center', gap: 8, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+            style={{ width: 176, alignItems: 'center', gap: 8, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
             <Pressable onPress={() => openProfile(user.id)} accessibilityRole="button" accessibilityLabel={`Ver perfil de ${user.name}`}
               style={{ alignItems: 'center', gap: 6, alignSelf: 'stretch' }}>
               <Avatar user={user} size={56} />
@@ -52,6 +53,7 @@ export default function Inicio() {
   const me = useMe();
   const now = useNow();
   const [feed, setFeed] = useState<Feed>('para-voce');
+  const wide = useWide();
 
   const myFollowing = new Set(followingOf(following, me.id));
   const myGroups = new Set(groups.filter((g) => g.members[me.id]).map((g) => g.id));
@@ -79,24 +81,43 @@ export default function Inicio() {
             {!canPublish(me) ? (
               <VerifyPrompt text="Confirme que você é aluno para publicar, comentar e entrar nos Bora?. Enviamos um código para o seu e-mail institucional." />
             ) : null}
-            <Pressable
-              onPress={() => router.push({ pathname: '/criar', params: { tipo: 'post' } })}
-              accessibilityRole="button"
-              style={[styles.row, { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 12, borderWidth: 1, borderColor: colors.border }]}>
-              <Avatar user={me} />
-              <Text style={[styles.muted, { fontSize: 15, flex: 1 }]}>Pergunte, recomende, combine algo…</Text>
-            </Pressable>
+            {/* Card de publicar + filtros do feed, como no modelo */}
+            <View style={[styles.card, styles.cardStripe, { padding: 0, gap: 0, overflow: 'hidden' }]}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/criar', params: { tipo: 'post' } })}
+                accessibilityRole="button"
+                style={[styles.row, { padding: 14, gap: 14 }]}>
+                <Avatar user={me} size={48} />
+                <Text style={[styles.muted, { fontSize: 16, flex: 1 }]}>Pergunte, recomende, combine algo…</Text>
+              </Pressable>
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+              <View style={[styles.row, { padding: 12, gap: 8, flexWrap: 'wrap' }]}>
+                <Chip label="Para você" icon="sparkles" active={feed === 'para-voce'} onPress={() => setFeed('para-voce')} />
+                <Chip label={`Seguindo${myFollowing.size ? ` (${myFollowing.size})` : ''}`} icon="people" active={feed === 'seguindo'} onPress={() => setFeed('seguindo')} />
+                {wide ? (
+                  <>
+                    <View style={{ width: 1, height: 26, backgroundColor: colors.border, marginHorizontal: 4 }} />
+                    <Pressable onPress={() => router.push({ pathname: '/criar', params: { tipo: 'post' } })} accessibilityRole="button"
+                      style={[styles.row, { gap: 6, paddingHorizontal: 6 }]}>
+                      <Ionicons name="add" size={20} color={colors.text} />
+                      <Text style={styles.label}>Criar post</Text>
+                    </Pressable>
+                  </>
+                ) : null}
+                <View style={{ flex: 1 }} />
+                <Pressable onPress={() => router.push({ pathname: '/criar', params: { tipo: 'post' } })} accessibilityRole="button" accessibilityLabel="Nova publicação"
+                  style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', ...glow(0.8) }}>
+                  <Ionicons name="paper-plane-outline" size={19} color={colors.onAccent} />
+                </Pressable>
+              </View>
+            </View>
             {myFollowing.size < 3 ? <PeopleStrip /> : null}
-            <ChipRow>
-              <Chip label="Para você" icon="sparkles" active={feed === 'para-voce'} onPress={() => setFeed('para-voce')} />
-              <Chip label={`Seguindo${myFollowing.size ? ` (${myFollowing.size})` : ''}`} icon="people" active={feed === 'seguindo'} onPress={() => setFeed('seguindo')} />
-            </ChipRow>
           </View>
         }
         ListFooterComponent={list.length ? (
           <View style={{ alignItems: 'center', gap: 4, paddingVertical: 24 }}>
             <Text style={styles.hint}>Você viu tudo dos últimos 30 dias.</Text>
-            <Text style={[styles.hint, { color: colors.accent }]} accessibilityRole="link" onPress={() => router.push('/buscar')}>
+            <Text style={[styles.hint, { color: colors.accentSoft }]} accessibilityRole="link" onPress={() => router.push('/buscar')}>
               Buscar pessoas, comunidades e eventos
             </Text>
           </View>

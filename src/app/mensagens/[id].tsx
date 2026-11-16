@@ -80,7 +80,7 @@ export default function Conversa() {
             <View style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
               <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
                 <Text style={[styles.body, { color: mine ? colors.onAccent : colors.text }]}>{item.text}</Text>
-                <Text style={[styles.hint, { color: mine ? 'rgba(17,19,24,0.6)' : colors.muted, alignSelf: 'flex-end', fontSize: 11 }]}>
+                <Text style={[styles.hint, { color: mine ? 'rgba(255,255,255,0.75)' : colors.muted, alignSelf: 'flex-end', fontSize: 11 }]}>
                   {hhmm(item.createdAt)}{mine && item.readAt ? ' · lida' : ''}
                 </Text>
               </View>

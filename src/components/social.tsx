@@ -8,7 +8,7 @@ import { useMe, useStore } from '@/lib/store';
 import { isFollowing } from '@/lib/social';
 import { relativeStart, useNow, when } from '@/lib/time';
 import type { Group, ID, Ride, User } from '@/lib/types';
-import { colors, hardShadow, radius } from '@/theme';
+import { colors, glow, radius } from '@/theme';
 import { Avatar, Badge, Card, styles } from './ui';
 
 export const openProfile = (id: ID) => router.push(`/usuario/${id}`);
@@ -27,11 +27,11 @@ export function FollowButton({ userId, compact }: { userId: ID; compact?: boolea
       accessibilityRole="button"
       accessibilityLabel={on ? 'Deixar de seguir' : label}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.md, borderWidth: 2,
-        borderColor: on ? colors.border : colors.ink,
+        flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.pill, borderWidth: 1,
+        borderColor: on ? colors.border : colors.accent,
         paddingHorizontal: compact ? 12 : 18, paddingVertical: compact ? 6 : 10,
         backgroundColor: on ? colors.surface2 : colors.accent,
-        ...(on ? {} : pressed ? { transform: [{ translateX: 2 }, { translateY: 2 }], ...hardShadow(1) } : hardShadow(3)),
+        opacity: pressed ? 0.85 : 1, ...(on ? {} : glow(0.5)),
       })}>
       {on ? <Ionicons name={followsMe ? 'people' : 'checkmark'} size={14} color={colors.text} /> : null}
       <Text style={{ fontWeight: '900', fontSize: compact ? 13 : 15, color: on ? colors.text : colors.onAccent }}>{label}</Text>
@@ -85,7 +85,7 @@ export function GroupCard({ group }: { group: Group }) {
           {group.verified ? <Ionicons name="checkmark-circle" size={15} color={colors.accent} accessibilityLabel="Comunidade oficial" /> : null}
         </View>
         <Text style={styles.muted}>{groupKind(group.kind).label} · {count} {count === 1 ? 'membro' : 'membros'}{role ? ' · você participa' : ''}</Text>
-        {next ? <Text style={[styles.hint, { color: colors.accent }]} numberOfLines={1}>Próximo: {next.title} · {when(next.startsAt, now)}</Text> : null}
+        {next ? <Text style={[styles.hint, { color: colors.accentSoft }]} numberOfLines={1}>Próximo: {next.title} · {when(next.startsAt, now)}</Text> : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.muted} />
     </Card>
@@ -105,9 +105,9 @@ export function RideCard({ ride, showGroup = true }: { ride: Ride; showGroup?: b
       <View style={styles.row}>
         <View style={{ backgroundColor: colors.surface2, borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', gap: 4, alignItems: 'center' }}>
           <Ionicons name="bus" size={12} color={colors.accent} />
-          <Text style={{ color: colors.accent, fontWeight: '900', fontSize: 12 }}>SAÍDA</Text>
+          <Text style={{ color: colors.accentSoft, fontWeight: '900', fontSize: 12 }}>SAÍDA</Text>
         </View>
-        <Text style={[styles.label, { color: colors.accent }]}>{relativeStart(ride.departsAt, now)}</Text>
+        <Text style={[styles.label, { color: colors.accentSoft }]}>{relativeStart(ride.departsAt, now)}</Text>
         {ride.cancelled ? <Badge label="Cancelada" tone="warn" /> : full ? <Badge label="Lotada" tone="warn" /> : null}
       </View>
       <Text style={[styles.title, { fontSize: 17 }]}>{ride.title}</Text>

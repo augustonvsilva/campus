@@ -3,14 +3,14 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import {
-  Image, Pressable, StyleProp, StyleSheet, Switch, Text, TextInput, TextInputProps, View, ViewStyle,
+  Image, Pressable, StyleProp, StyleSheet, Switch, Text, TextInput, TextInputProps, useWindowDimensions, View, ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SEMESTERS } from '@/lib/handle';
 import type { User } from '@/lib/types';
 import { useMe, useStore } from '@/lib/store';
-import { colors, hardShadow, radius } from '@/theme';
+import { colors, glow, hardShadow, radius } from '@/theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -23,7 +23,7 @@ export function Avatar({ user, size = 36 }: { user?: User; size?: number }) {
       <Image
         source={{ uri: user.avatarUrl }}
         accessibilityLabel={`Foto de ${user.name}`}
-        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surface2, borderWidth: 2, borderColor: colors.ink }}
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surface2, borderWidth: 2, borderColor: colors.surface2 }}
       />
     );
   }
@@ -32,9 +32,27 @@ export function Avatar({ user, size = 36 }: { user?: User; size?: number }) {
       accessibilityLabel={user ? `Foto de ${user.name}` : undefined}
       style={{
         width: size, height: size, borderRadius: size / 2, backgroundColor: user?.color ?? colors.surface2,
-        alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.ink,
+        alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.12)',
       }}>
-      <Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: size * 0.36, letterSpacing: -0.5 }}>{initials}</Text>
+      <Text style={{ color: '#14111C', fontWeight: '900', fontSize: size * 0.36, letterSpacing: -0.5 }}>{initials}</Text>
+    </View>
+  );
+}
+
+/** Tela larga (computador): menu lateral + colunas. Abaixo disso, layout de celular. */
+export const WIDE = 1000;
+export function useWide() {
+  return useWindowDimensions().width >= WIDE;
+}
+
+/** Símbolo do Campus: "C" num círculo violeta com anel. */
+export function CampusLogo({ size = 44 }: { size?: number }) {
+  return (
+    <View accessibilityLabel="Campus"
+      style={{ width: size, height: size, borderRadius: size / 2, borderWidth: Math.max(2, Math.round(size * 0.07)), borderColor: colors.accent, padding: Math.round(size * 0.06), ...glow(0.7) }}>
+      <View style={{ flex: 1, borderRadius: size, backgroundColor: colors.accentDeep, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: size * 0.48, lineHeight: size * 0.56, includeFontPadding: false }}>C</Text>
+      </View>
     </View>
   );
 }
@@ -42,12 +60,26 @@ export function Avatar({ user, size = 36 }: { user?: User; size?: number }) {
 export function TabHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const insets = useSafeAreaInsets();
   const { me, community, unreadActivity, unreadMessages, messagesEnabled } = useStore();
+  const wide = useWide();
+  if (wide) {
+    return (
+      <View style={[styles.header, { paddingTop: 20, borderBottomWidth: 0 }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.h1}>{title}</Text>
+          {subtitle ? <Text style={styles.muted}>{subtitle}</Text> : null}
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-      <View style={{ flex: 1 }}>
-        <View style={styles.tag}><Text style={styles.tagText}>CAMPUS · {community.shortName.toUpperCase()}</Text></View>
-        <Text style={styles.h1}>{title}</Text>
-        {subtitle ? <Text style={styles.muted}>{subtitle}</Text> : null}
+      <View style={[styles.row, { flex: 1, gap: 12 }]}>
+        <CampusLogo size={40} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.kicker} numberOfLines={1}>{community.shortName}</Text>
+          <Text style={[styles.h1, { fontSize: 28, lineHeight: 32 }]}>{title}</Text>
+          {subtitle ? <Text style={styles.muted}>{subtitle}</Text> : null}
+        </View>
       </View>
       <Pressable onPress={() => router.push('/buscar')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Buscar"
         style={styles.headerIcon}>
@@ -94,9 +126,7 @@ export function Button({
 }) {
   const bg = { primary: colors.accent, secondary: colors.surface2, ghost: 'transparent', danger: 'transparent' }[variant];
   const fg = { primary: colors.onAccent, secondary: colors.text, ghost: colors.text, danger: colors.danger }[variant];
-  const border = { primary: colors.ink, secondary: colors.border, ghost: 'transparent', danger: colors.danger }[variant];
-  const raised = variant === 'primary' || variant === 'secondary';
-  const depth = compact ? 3 : 4;
+  const border = { primary: colors.accent, secondary: colors.border, ghost: 'transparent', danger: colors.danger }[variant];
   return (
     <Pressable
       onPress={onPress}
@@ -107,10 +137,9 @@ export function Button({
       style={({ pressed }) => [
         styles.button,
         compact && { paddingVertical: 8, paddingHorizontal: 14 },
-        { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.45 : 1 },
-        raised && !disabled && (pressed
-          ? { transform: [{ translateX: depth - 1 }, { translateY: depth - 1 }], ...hardShadow(1) }
-          : hardShadow(depth)),
+        { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.45 : pressed ? 0.85 : 1 },
+        variant === 'primary' && !disabled && glow(pressed ? 0.4 : 0.8),
+        pressed && { transform: [{ scale: 0.98 }] },
         style,
       ]}>
       {icon ? <Ionicons name={icon} size={compact ? 16 : 18} color={fg} /> : null}
@@ -125,7 +154,7 @@ export function Chip({ label, active, onPress, icon }: { label: string; active?:
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={[styles.chip, active && { backgroundColor: colors.accent, borderColor: colors.ink, ...hardShadow(2) }]}>
+      style={[styles.chip, active && { backgroundColor: colors.accent, borderColor: colors.accent, ...glow(0.6) }]}>
       {icon ? <Ionicons name={icon} size={14} color={active ? colors.onAccent : colors.muted} /> : null}
       <Text style={[styles.chipText, active && { color: colors.onAccent }]}>{label}</Text>
     </Pressable>
@@ -139,11 +168,11 @@ export function ChipRow({ children }: { children: ReactNode }) {
 export function Badge({ label, tone = 'muted', icon, style }: {
   label: string; tone?: 'muted' | 'accent' | 'warn'; icon?: IconName; style?: StyleProp<ViewStyle>;
 }) {
-  const color = { muted: colors.muted, accent: colors.accent, warn: colors.warn }[tone];
+  const color = { muted: colors.muted, accent: colors.accentSoft, warn: colors.warn }[tone];
   return (
     <View style={[styles.badge, { borderColor: color, backgroundColor: `${color}1F` }, style]}>
       {icon ? <Ionicons name={icon} size={12} color={color} /> : null}
-      <Text style={[styles.badgeText, { color }]}>{label.toUpperCase()}</Text>
+      <Text style={[styles.badgeText, { color }]}>{label}</Text>
     </View>
   );
 }
@@ -280,7 +309,7 @@ export function CoursePicker({ value, onChange, courses }: { value: string; onCh
           {!filtered.length ? <Text style={[styles.hint, { padding: 8 }]}>Nenhum curso encontrado.</Text> : null}
           <Pressable onPress={() => choose(null)} accessibilityRole="button"
             style={{ paddingVertical: 10, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: colors.border, marginTop: 4 }}>
-            <Text style={{ color: colors.accent, fontSize: 15, fontWeight: '700' }}>Outro curso (digitar)</Text>
+            <Text style={{ color: colors.accentSoft, fontSize: 15, fontWeight: '700' }}>Outro curso (digitar)</Text>
           </Pressable>
         </View>
       ) : null}
@@ -319,7 +348,7 @@ export function ToggleRow({ label, hint, value, onValueChange }: {
 export function Empty({ icon, title, text }: { icon: IconName; title: string; text?: string }) {
   return (
     <View style={styles.empty}>
-      <View style={styles.emptyIcon}><Ionicons name={icon} size={26} color={colors.accent} /></View>
+      <View style={styles.emptyIcon}><Ionicons name={icon} size={26} color={colors.accentSoft} /></View>
       <Text style={styles.emptyTitle}>{title}</Text>
       {text ? <Text style={[styles.muted, { textAlign: 'center' }]}>{text}</Text> : null}
     </View>
@@ -327,7 +356,7 @@ export function Empty({ icon, title, text }: { icon: IconName; title: string; te
 }
 
 export function Notice({ icon = 'information-circle', text, tone = 'muted' }: { icon?: IconName; text: string; tone?: 'muted' | 'warn' }) {
-  const color = tone === 'warn' ? colors.warn : colors.info;
+  const color = tone === 'warn' ? colors.warn : colors.accentSoft;
   return (
     <View style={[styles.notice, { borderColor: tone === 'warn' ? colors.warn : colors.border, borderLeftColor: color, backgroundColor: `${color}12` }]}>
       <Ionicons name={icon} size={18} color={color} />
@@ -352,73 +381,75 @@ export function VerifyPrompt({ text }: { text: string }) {
 
 export const styles = StyleSheet.create({
   headerIcon: {
-    width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginRight: 6,
-    borderRadius: radius.md, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface,
+    width: 42, height: 42, alignItems: 'center', justifyContent: 'center', marginRight: 6,
+    borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
   },
   badgeDot: {
-    position: 'absolute', top: -6, right: -6, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 4,
-    backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.ink,
+    position: 'absolute', top: -4, right: -4, minWidth: 19, height: 19, borderRadius: 10, paddingHorizontal: 4,
+    backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.bg,
   },
   badgeDotText: { color: colors.onAccent, fontSize: 10, fontWeight: '900' },
   header: {
-    flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingBottom: 14, backgroundColor: colors.bg,
-    borderBottomWidth: 2, borderBottomColor: colors.border,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 14, backgroundColor: colors.bg,
+    borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  tag: { alignSelf: 'flex-start', backgroundColor: colors.accent, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3, marginBottom: 6 },
+  tag: { alignSelf: 'flex-start', backgroundColor: colors.accent, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 6 },
   tagText: { color: colors.onAccent, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
-  kicker: { color: colors.accent, fontSize: 11, fontWeight: '900', letterSpacing: 1.6 },
-  h1: { color: colors.text, fontSize: 34, fontWeight: '900', letterSpacing: -1.2, lineHeight: 38 },
-  h2: { color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.6 },
+  kicker: { color: colors.accentSoft, fontSize: 12, fontWeight: '800', letterSpacing: 0.3 },
+  h1: { color: colors.text, fontSize: 32, fontWeight: '900', letterSpacing: -0.8, lineHeight: 36 },
+  h2: { color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
   title: { color: colors.text, fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
   body: { color: colors.text, fontSize: 15, lineHeight: 22 },
   muted: { color: colors.muted, fontSize: 13, lineHeight: 18 },
   hint: { color: colors.muted, fontSize: 12, lineHeight: 17 },
   label: { color: colors.text, fontSize: 13, fontWeight: '800' },
-  /** Rótulo de campo de formulário (caixa alta). */
-  fieldLabel: { color: colors.text, fontSize: 12, fontWeight: '900', letterSpacing: 0.6, textTransform: 'uppercase' },
+  /** Rótulo de campo de formulário. */
+  fieldLabel: { color: colors.muted, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
   button: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 13, paddingHorizontal: 18, borderRadius: radius.md, borderWidth: 2,
+    paddingVertical: 13, paddingHorizontal: 20, borderRadius: radius.pill, borderWidth: 1,
   },
-  buttonText: { fontSize: 15, fontWeight: '900', letterSpacing: 0.3, textTransform: 'uppercase' },
+  buttonText: { fontSize: 15, fontWeight: '800', letterSpacing: 0.1 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 12,
-    borderRadius: radius.md, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface,
+    flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 14,
+    borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
   },
-  chipText: { color: colors.text, fontSize: 13, fontWeight: '800' },
+  chipText: { color: colors.text, fontSize: 13, fontWeight: '700' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   badge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1.5, borderRadius: radius.sm,
-    paddingHorizontal: 7, paddingVertical: 2, alignSelf: 'flex-start',
+    flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: radius.pill,
+    paddingHorizontal: 9, paddingVertical: 3, alignSelf: 'flex-start',
   },
-  badgeText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.6 },
+  badgeText: { fontSize: 11, fontWeight: '800' },
   card: {
     backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, gap: 12,
-    borderWidth: 2, borderColor: colors.border, ...hardShadow(4),
+    borderWidth: 1, borderColor: colors.border, ...hardShadow(4),
   },
-  cardPressed: { transform: [{ translateX: 3 }, { translateY: 3 }], ...hardShadow(1) },
+  cardPressed: { opacity: 0.88, transform: [{ scale: 0.995 }] },
+  /** Faixa violeta à esquerda (publicações). */
+  cardStripe: { borderLeftWidth: 3, borderLeftColor: colors.accent },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionBar: { width: 5, height: 20, borderRadius: 2, backgroundColor: colors.accent },
-  sectionTitle: { color: colors.text, fontSize: 19, fontWeight: '900', letterSpacing: -0.4 },
+  sectionBar: { width: 4, height: 18, borderRadius: 2, backgroundColor: colors.accent },
+  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
   input: {
-    backgroundColor: '#12151C', borderWidth: 2, borderColor: colors.border, borderRadius: radius.md,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
     color: colors.text, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
   },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
   empty: {
-    alignItems: 'center', gap: 8, padding: 24, borderRadius: radius.lg, borderWidth: 2, borderColor: colors.border,
+    alignItems: 'center', gap: 8, padding: 24, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border,
     borderStyle: 'dashed', backgroundColor: colors.surface,
   },
   emptyIcon: {
-    width: 52, height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.surface2, borderWidth: 2, borderColor: colors.border,
+    width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border,
   },
   emptyTitle: { color: colors.text, fontSize: 16, fontWeight: '900' },
-  notice: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1.5, borderLeftWidth: 5, alignItems: 'flex-start' },
+  notice: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1, borderLeftWidth: 4, alignItems: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16, gap: 16, paddingBottom: 56 },
-  bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, gap: 4, borderWidth: 2 },
-  bubbleMine: { backgroundColor: colors.accent, borderColor: colors.ink, borderBottomRightRadius: 4, ...hardShadow(3) },
-  bubbleTheirs: { backgroundColor: colors.surface2, borderColor: colors.border, borderBottomLeftRadius: 4 },
+  content: { padding: 16, gap: 16, paddingBottom: 96 },
+  bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, gap: 4 },
+  bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 6, ...glow(0.5) },
+  bubbleTheirs: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 6 },
 });

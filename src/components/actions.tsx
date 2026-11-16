@@ -39,7 +39,7 @@ export function QuickActions({ share, place, calendar }: {
           <Button label="Baixar .ics" icon="download-outline" variant="ghost" compact onPress={() => downloadIcs(calendar)} />
         ) : null}
       </View>
-      {flash ? <Text style={[styles.hint, { color: colors.accent }]}>{flash}</Text> : null}
+      {flash ? <Text style={[styles.hint, { color: colors.accentSoft }]}>{flash}</Text> : null}
     </View>
   );
 }

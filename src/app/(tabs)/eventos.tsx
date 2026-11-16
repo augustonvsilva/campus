@@ -52,7 +52,7 @@ export default function Eventos() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={actions.refresh} tintColor={colors.accent} />}
         contentContainerStyle={[styles.content, { gap: 10 }]}
         renderSectionHeader={({ section }) => (
-          <Text style={[styles.label, { color: colors.accent, marginTop: 8, textTransform: 'uppercase', letterSpacing: 1 }]}>{section.title}</Text>
+          <Text style={[styles.label, { color: colors.accentSoft, marginTop: 8, textTransform: 'uppercase', letterSpacing: 1 }]}>{section.title}</Text>
         )}
         renderItem={({ item }) => <EventCard event={item} />}
         ListEmptyComponent={

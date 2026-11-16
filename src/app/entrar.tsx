@@ -191,8 +191,8 @@ export default function Entrar() {
                     onValueChange={edit(setAccepted)}
                   />
                   <View style={{ flexDirection: 'row', gap: 16 }}>
-                    <Text style={[styles.label, { color: colors.accent }]} accessibilityRole="link" onPress={() => router.push('/termos')}>Termos de uso</Text>
-                    <Text style={[styles.label, { color: colors.accent }]} accessibilityRole="link" onPress={() => router.push('/privacidade')}>Política de Privacidade</Text>
+                    <Text style={[styles.label, { color: colors.accentSoft }]} accessibilityRole="link" onPress={() => router.push('/termos')}>Termos de uso</Text>
+                    <Text style={[styles.label, { color: colors.accentSoft }]} accessibilityRole="link" onPress={() => router.push('/privacidade')}>Política de Privacidade</Text>
                   </View>
                 </>
               ) : null}

@@ -324,7 +324,7 @@ export default function Perfil() {
           <Chip label={`${followingOf(following, me.id).length} seguindo`}
             onPress={() => router.push({ pathname: '/conexoes', params: { usuario: me.id, lista: 'seguindo' } })} />
         </View>
-        <Text style={[styles.label, { color: colors.accent }]} onPress={() => router.push(`/usuario/${me.id}`)}>
+        <Text style={[styles.label, { color: colors.accentSoft }]} onPress={() => router.push(`/usuario/${me.id}`)}>
           Ver como os outros me veem
         </Text>
       </View>
@@ -349,7 +349,7 @@ export default function Perfil() {
 
       <Section
         title="Minhas comunidades"
-        right={<Text style={[styles.label, { color: colors.accent }]} onPress={() => router.push({ pathname: '/explorar', params: { aba: 'comunidades' } })}>Explorar</Text>}>
+        right={<Text style={[styles.label, { color: colors.accentSoft }]} onPress={() => router.push({ pathname: '/explorar', params: { aba: 'comunidades' } })}>Explorar</Text>}>
         {myGroups.length
           ? myGroups.map((g) => <GroupCard key={g.id} group={g} />)
           : <Text style={styles.muted}>Você ainda não participa de nenhuma. Atléticas, baterias e coletivos estão em Explorar.</Text>}

@@ -57,7 +57,7 @@ export function CommentList({ items, reportAs, emptyText, thread }: {
               )}
               {mine && thread && editing !== c.id ? (
                 <View style={{ flexDirection: 'row', gap: 16, marginTop: 2 }}>
-                  <Text style={[styles.hint, { color: colors.accent }]} accessibilityRole="button"
+                  <Text style={[styles.hint, { color: colors.accentSoft }]} accessibilityRole="button"
                     onPress={() => { setEditing(c.id); setDraft(c.text); }}>Editar</Text>
                   <Text style={[styles.hint, { color: colors.danger }]} accessibilityRole="button"
                     onPress={() => actions.deleteComment(thread.target, thread.parentId, c.id)}>Apagar</Text>

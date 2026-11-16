@@ -59,7 +59,7 @@ export default function EventoScreen() {
         {group ? (
           <Pressable onPress={() => openGroup(group.id)} accessibilityRole="link" style={[styles.row, { alignItems: 'flex-start' }]}>
             <Ionicons name="megaphone-outline" size={18} color={colors.accent} style={{ marginTop: 1 }} />
-            <Text style={[styles.body, { flex: 1 }]}>Organização: <Text style={{ color: colors.accent, fontWeight: '700' }}>{group.name}</Text></Text>
+            <Text style={[styles.body, { flex: 1 }]}>Organização: <Text style={{ color: colors.accentSoft, fontWeight: '700' }}>{group.name}</Text></Text>
           </Pressable>
         ) : info('megaphone-outline', `Organização: ${event.organizer}`)}
         {info('people-outline', `${event.going.length} vão · ${event.interested.length} interessados`)}

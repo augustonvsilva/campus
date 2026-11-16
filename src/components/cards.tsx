@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 
 import { eventCategory, placeCategory, price } from '@/lib/labels';
+import { shareLink } from '@/lib/links';
 import { useMe, useStore } from '@/lib/store';
 import { ago, hhmm, relativeStart, shortDate, useNow, validUntil, when } from '@/lib/time';
 import type { Bora, CampusEvent, Place, Post } from '@/lib/types';
@@ -14,8 +15,8 @@ function ActionButton({ icon, label, active, onPress, a11y }: {
 }) {
   return (
     <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={a11y} style={styles.row}>
-      <Ionicons name={icon} size={20} color={active ? colors.accent : colors.muted} />
-      {label ? <Text style={[styles.muted, active && { color: colors.accent }]}>{label}</Text> : null}
+      <Ionicons name={icon} size={20} color={active ? colors.accentSoft : colors.muted} />
+      {label ? <Text style={[styles.muted, active && { color: colors.accentSoft }]}>{label}</Text> : null}
     </Pressable>
   );
 }
@@ -32,7 +33,7 @@ export function PostCard({ post, linked = true, showGroup = true }: { post: Post
   const myVote = post.poll?.find((o) => o.votes.includes(me.id))?.id;
 
   return (
-    <Card onPress={linked ? () => router.push(`/post/${post.id}`) : undefined}>
+    <Card onPress={linked ? () => router.push(`/post/${post.id}`) : undefined} style={styles.cardStripe}>
       {group && showGroup ? (
         <Pressable onPress={() => router.push(`/comunidade/${group.id}`)} accessibilityRole="link"
           style={[styles.row, { gap: 6, marginBottom: -4 }]}>
@@ -57,6 +58,12 @@ export function PostCard({ post, linked = true, showGroup = true }: { post: Post
           </View>
         </Pressable>
         {post.expiresAt ? <Badge label={validUntil(post.expiresAt, now)} icon="time-outline" tone="accent" /> : null}
+        {post.authorId !== me.id ? (
+          <Pressable hitSlop={10} accessibilityRole="button" accessibilityLabel="Denunciar publicação" style={{ paddingHorizontal: 4 }}
+            onPress={() => router.push({ pathname: '/denunciar', params: { tipo: 'post', id: post.id, autor: post.authorId } })}>
+            <Ionicons name="ellipsis-horizontal" size={20} color={colors.muted} />
+          </Pressable>
+        ) : null}
       </View>
 
       <Text style={styles.body}>{post.text}</Text>
@@ -79,11 +86,11 @@ export function PostCard({ post, linked = true, showGroup = true }: { post: Post
                 accessibilityLabel={`Votar em ${o.label}`}
                 style={{ borderRadius: radius.md, borderWidth: 1, borderColor: mine ? colors.accent : colors.border, overflow: 'hidden' }}>
                 {myVote ? (
-                  <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${pct}%`, backgroundColor: mine ? '#C8F25A33' : colors.surface2 }} />
+                  <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${pct}%`, backgroundColor: mine ? 'rgba(139,92,246,0.25)' : colors.surface2 }} />
                 ) : null}
                 <View style={[styles.row, { paddingHorizontal: 12, paddingVertical: 10, justifyContent: 'space-between' }]}>
                   <Text style={[styles.body, { flex: 1 }]}>{o.label}</Text>
-                  {myVote ? <Text style={[styles.label, mine && { color: colors.accent }]}>{pct}%</Text> : null}
+                  {myVote ? <Text style={[styles.label, mine && { color: colors.accentSoft }]}>{pct}%</Text> : null}
                 </View>
               </Pressable>
             );
@@ -101,13 +108,10 @@ export function PostCard({ post, linked = true, showGroup = true }: { post: Post
           icon="chatbubble-outline" label={String(post.comments.length)}
           onPress={() => router.push(`/post/${post.id}`)} a11y="Comentários"
         />
-        <View style={{ flex: 1 }} />
-        {post.authorId !== me.id ? (
-          <ActionButton
-            icon="flag-outline" a11y="Denunciar publicação"
-            onPress={() => router.push({ pathname: '/denunciar', params: { tipo: 'post', id: post.id, autor: post.authorId } })}
-          />
-        ) : null}
+        <ActionButton
+          icon="arrow-redo-outline" label="Compartilhar" a11y="Compartilhar publicação"
+          onPress={() => void shareLink(`${author?.name ?? 'Alguém'} no Campus`, `/post/${post.id}`)}
+        />
       </View>
     </Card>
   );
@@ -136,7 +140,7 @@ export function EventCard({ event }: { event: CampusEvent }) {
         </View>
         <Text style={styles.title}>{event.title}</Text>
         <Text style={styles.muted}>{live ? `até ${hhmm(event.endsAt)}` : when(event.startsAt, now)} · {event.location}</Text>
-        <Text style={[styles.hint, (going || interested) && { color: colors.accent }]}>
+        <Text style={[styles.hint, (going || interested) && { color: colors.accentSoft }]}>
           {going ? 'Você vai · ' : interested ? 'Você tem interesse · ' : ''}
           {event.going.length} vão · {event.interested.length} interessados
         </Text>
@@ -160,7 +164,7 @@ export function BoraCard({ bora }: { bora: Bora }) {
         <View style={{ backgroundColor: colors.accent, borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 3 }}>
           <Text style={{ color: colors.onAccent, fontWeight: '900', fontSize: 12 }}>BORA?</Text>
         </View>
-        <Text style={[styles.label, { color: colors.accent }]}>{relativeStart(bora.startsAt, now)}</Text>
+        <Text style={[styles.label, { color: colors.accentSoft }]}>{relativeStart(bora.startsAt, now)}</Text>
         {bora.cancelled ? <Badge label="Cancelado" tone="warn" /> : null}
       </View>
       <Text style={[styles.title, { fontSize: 18 }]}>{bora.activity}</Text>

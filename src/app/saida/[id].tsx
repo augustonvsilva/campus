@@ -39,7 +39,7 @@ export default function SaidaScreen() {
     <ScrollView contentContainerStyle={[styles.content, { gap: 20 }]} keyboardShouldPersistTaps="handled">
       {ride.cancelled ? <Notice tone="warn" icon="close-circle" text="Esta saída foi cancelada pela comunidade." /> : null}
       <View style={{ gap: 8 }}>
-        <Text style={[styles.label, { color: colors.accent }]}>SAÍDA · {relativeStart(ride.departsAt, now).toUpperCase()}</Text>
+        <Text style={[styles.label, { color: colors.accentSoft }]}>SAÍDA · {relativeStart(ride.departsAt, now).toUpperCase()}</Text>
         <Text style={[styles.h1, { fontSize: 28 }]}>{ride.title}</Text>
         {full && !ride.cancelled ? <Badge label="Lotada" tone="warn" /> : null}
       </View>
