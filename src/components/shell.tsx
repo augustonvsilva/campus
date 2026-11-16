@@ -23,11 +23,15 @@ function NavLink({ item }: { item: NavItem }) {
       accessibilityRole="link"
       accessibilityLabel={item.badge ? `${item.label}, ${item.badge} novidades` : item.label}
       accessibilityState={{ selected: active }}
-      style={({ hovered, pressed }: { hovered?: boolean; pressed: boolean }) => [
+      style={(state) => {
+        // "hovered" existe no navegador (react-native-web), mas não está nos tipos do React Native.
+        const { hovered, pressed } = state as typeof state & { hovered?: boolean };
+        return [
         { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1, borderColor: 'transparent' },
         active && { backgroundColor: 'rgba(139,92,246,0.22)', borderColor: 'rgba(139,92,246,0.55)', ...glow(0.35) },
         !active && (hovered || pressed) && { backgroundColor: colors.surface },
-      ]}>
+        ];
+      }}>
       <Ionicons name={item.icon} size={22} color={active ? colors.text : colors.muted} />
       <Text style={{ flex: 1, color: active ? colors.text : '#D9D3E6', fontSize: 16, fontWeight: active ? '800' : '600' }}>{item.label}</Text>
       {item.badge ? (
@@ -99,7 +103,10 @@ function InviteCard() {
 function TopIcon({ icon, label, badge, onPress }: { icon: IconName; label: string; badge?: number; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={badge ? `${label}, ${badge} novidades` : label} hitSlop={8}
-      style={({ hovered }: { hovered?: boolean }) => [{ width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' }, hovered && { backgroundColor: colors.surface }]}>
+      style={(state) => [
+        { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+        (state as typeof state & { hovered?: boolean }).hovered && { backgroundColor: colors.surface },
+      ]}>
       <Ionicons name={icon} size={24} color={colors.text} />
       {badge ? <View style={[styles.badgeDot, { top: 4, right: 4 }]}><Text style={styles.badgeDotText}>{badge > 9 ? '9+' : badge}</Text></View> : null}
     </Pressable>
