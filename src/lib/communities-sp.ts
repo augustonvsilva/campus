@@ -617,6 +617,14 @@ export const CRUZEIRO_DO_SUL: Community = {
     'Relações Internacionais', 'Relações Públicas', 'Terapia Ocupacional',
   ].sort((a, b) => a.localeCompare(b, 'pt-BR')),
   inviteCodes: ['CSUL2026', 'FUNDADORES'],
+  cover: {
+    source: require('../../assets/campus/cruzeiro-do-sul.jpg'),
+    sourceWide: require('../../assets/campus/cruzeiro-do-sul-largo.jpg'),
+    author: 'UniCzS',
+    license: 'CC BY-SA 3.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Unicsul-Analia-Franco-2.jpg',
+    place: 'Prédio tombado, Campus Anália Franco',
+  },
 };
 
 // O site não dá uma lista confiável por campus: no filtro por campus, os campi com código duplo devolvem o catálogo
@@ -710,6 +718,14 @@ export const FIAP: Community = {
     'Inteligência Artificial', 'Jogos Digitais', 'Marketing', 'Segurança Cibernética', 'Sistemas de Informação',
   ].sort((a, b) => a.localeCompare(b, 'pt-BR')),
   inviteCodes: ['FIAP2026', 'FUNDADORES'],
+  cover: {
+    source: require('../../assets/campus/fiap.jpg'),
+    sourceWide: require('../../assets/campus/fiap-largo.jpg'),
+    author: 'Germanoparra',
+    license: 'CC BY 3.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Fiap-paulista-coworking.jpg',
+    place: 'Coworking, Unidade Paulista',
+  },
 };
 
 export const SAO_PAULO: Community[] = [USP, FGV, INSPER, ESPM, FAAP, UNIFESP, CASPER, ANHEMBI, SAO_JUDAS, UNINOVE, BELAS_ARTES, FECAP, SENAC, CRUZEIRO_DO_SUL, UNIP, FIAP];

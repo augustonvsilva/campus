@@ -29,7 +29,7 @@ Com `.env.local` preenchido (veja abaixo), o app usa o **Supabase**: login com e
 
 1. Crie um projeto em [supabase.com](https://supabase.com). Sugestão: região **São Paulo (sa-east-1)**, pensando na LGPD.
 2. Aplique o banco, por um destes caminhos:
-   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql`, `0007_excluir_conta.sql`, `0008_engajamento.sql`, `0009_puc_sp.sql`, `0010_puc_ativa.sql` (PUC-SP), `0011_faculdades_sp.sql` (faculdades da capital) e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
+   - **Painel:** no SQL Editor, rode em ordem `supabase/migrations/0001_init.sql`, `0002_moderacao_midia_convites.sql`, `0003_foto_perfil.sql`, `0004_conexoes_comunidades.sql`, `0005_email_institucional.sql`, `0006_nick_curso_semestre.sql`, `0007_excluir_conta.sql`, `0008_engajamento.sql`, `0009_puc_sp.sql`, `0010_puc_ativa.sql` (PUC-SP), `0011_faculdades_sp.sql` (faculdades da capital), `0012_campus_do_aluno.sql` (campus no perfil) e, se quiser conteúdo inicial de exemplo, `supabase/seed.sql`.
    - **CLI:** `npx supabase link --project-ref <ref>` e depois `npx supabase db push`.
 3. Em **Authentication → Email Templates → Magic Link**, inclua `{{ .Token }}` no texto, para o e-mail trazer o código de 6 dígitos. Exemplo: `Seu código do Campus: {{ .Token }}`.
    Em **Authentication → Providers → Email**, defina o tamanho mínimo de senha como 8 (o app já exige 8, com letras e números) e deixe *Secure password change* desligado: a troca de senha no perfil não pede a senha antiga, já que a recuperação é feita por código no e-mail.
@@ -115,7 +115,7 @@ tests/
 
 Todo registro tem `community_id`, e o RLS limita leitura e escrita à comunidade de quem está logado. Os testes de banco garantem que um aluno da PUC não vê nem interage com conteúdo do Mackenzie.
 
-As universidades ficam em `src/lib/community.ts` (`COMMUNITIES`; as da capital em `src/lib/communities-sp.ts`): nome, campi com endereço, domínios de e-mail, lista oficial de cursos, prefixo de convite, foto da capa e `status` (`ativa` ou `dormindo`). Os campi aparecem no perfil, com link para o mapa.
+As universidades ficam em `src/lib/community.ts` (`COMMUNITIES`; as da capital em `src/lib/communities-sp.ts`): nome, campi com endereço, domínios de e-mail, lista oficial de cursos, prefixo de convite, foto da capa e `status` (`ativa` ou `dormindo`). No cadastro, o aluno escolhe o campus ("Seu campus", logo abaixo da universidade); ele fica no perfil e pode ser trocado. Os campi da universidade aparecem no perfil, com link para o mapa.
 
 **Escolha da universidade.** Na tela de entrada, o aluno escolhe a universidade numa lista com busca (sigla ou nome). A escolha muda a lista de cursos, os convites, o domínio de e-mail institucional e a capa.
 - **Depois do login:** vale a universidade da conta.
