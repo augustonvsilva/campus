@@ -79,6 +79,10 @@ await check('cadastro exige nome de usuário, curso e semestre', async () => {
   await page.getByRole('button', { name: 'Esconder senha' }).click();
   if ((await pw.getAttribute('type')) !== 'password') throw new Error('botão não escondeu a senha');
   await page.getByText('Entrar no Campus').click();
+  await visible('Escolha seu campus.');
+  await page.getByRole('button', { name: 'Escolher campus' }).click();
+  await page.getByText('Campus Higienópolis', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByText('Entrar no Campus').click();
   await visible('Escolha seu curso.');
   await page.getByRole('button', { name: 'Escolher curso' }).click();
   await page.getByPlaceholder('Buscar curso').fill('ciencia');
@@ -603,6 +607,8 @@ await check('cadastro com e-mail pessoal fica sem publicar até verificar', asyn
   await page.getByPlaceholder('ex.: ana.ribeiro').fill('aluna.pessoal');
   await page.getByPlaceholder('seu@email.com').fill('aluna@gmail.com');
   await page.getByPlaceholder('Mínimo de 8 caracteres').fill('aluna2026');
+  await page.getByRole('button', { name: 'Escolher campus' }).click();
+  await page.getByText('Campus Alphaville', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await page.getByRole('button', { name: 'Escolher curso' }).click();
   await page.getByText('Outro curso (digitar)').click();
   await page.getByPlaceholder('Digite o nome do seu curso').fill('Gastronomia');
@@ -676,6 +682,8 @@ await check('PUC-SP: escolher a universidade na entrada, cadastro com cursos e c
   await page.getByRole('switch').nth(0).click();
   await page.getByPlaceholder('ex.: ana.ribeiro').fill('lia.prado');
   await page.getByPlaceholder('Mínimo de 8 caracteres').fill('puc2026sp');
+  await page.getByRole('button', { name: 'Escolher campus' }).click();
+  await page.getByText('Campus Consolação', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await page.getByRole('button', { name: 'Escolher curso' }).click();
   await page.getByPlaceholder('Buscar curso').fill('jogos');
   await page.getByText('Jogos Digitais', { exact: true }).locator('visible=true').and(LIVE).first().click();
@@ -688,6 +696,7 @@ await check('PUC-SP: escolher a universidade na entrada, cadastro com cursos e c
   await shot('15-puc');
   await page.goto(BASE + '/perfil');
   await visible('@lia.prado · PUC-SP · Jogos Digitais (2º sem.)', { exact: false });
+  await visible('Campus Consolação');
   await visible('Pátio da Cruz, Campus Monte Alegre', { exact: false });
 });
 

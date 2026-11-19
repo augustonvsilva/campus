@@ -464,5 +464,16 @@ await expectOk('0011 de novo depois de desligar uma', () => db.exec(sql0011));
 (await rows(`select is_active from communities where id = 'fiap'`))[0]?.is_active === false
   ? ok('rodar a 0011 de novo não religa faculdade desligada') : bad('0011 religou a FIAP');
 
+console.log('Campus do aluno (0012)');
+const sql0012 = readFileSync(`${root}/supabase/migrations/0012_campus_do_aluno.sql`, 'utf8');
+await expectOk('migrations/0012_campus_do_aluno.sql', () => db.exec(sql0012));
+await expectOk('0012 pode rodar de novo sem erro', () => db.exec(sql0012));
+const leste = await expectOk('cadastro com campus', () => newUser('duda@usp.br', { name: 'Duda', invite_code: 'USP-FUNDADORES', campus: 'EACH – USP Leste' }));
+(await rows(`select campus from profiles where id = $1`, [leste]))[0]?.campus === 'EACH – USP Leste'
+  ? ok('campus escolhido no cadastro fica no perfil') : bad('campus do cadastro não foi salvo');
+const semCampus = await expectOk('cadastro sem campus (app antigo) continua funcionando', () => newUser('teo@usp.br', { name: 'Teo', invite_code: 'USP-FUNDADORES' }));
+(await rows(`select campus from profiles where id = $1`, [semCampus]))[0]?.campus === null
+  ? ok('sem campus, o perfil fica sem campus') : bad('campus inesperado');
+
 console.log(failures ? `\n${failures} FALHA(S)` : '\nTodos os cenários passaram.');
 process.exit(failures ? 1 : 0);

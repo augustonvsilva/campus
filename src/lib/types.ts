@@ -75,6 +75,8 @@ export interface User {
   /** E-mail institucional confirmado. Só é carregado para o próprio usuário. */
   institutionalEmail?: string;
   course?: string;
+  /** Campus onde estuda (um dos `campuses` da universidade). */
+  campus?: string;
   semester?: string;
   interests: string[];
   color: string;

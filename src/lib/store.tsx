@@ -170,7 +170,7 @@ function withoutUser(s: State, m: ID): State {
 }
 
 export type SignInInput =
-  | { mode: 'signup'; name: string; handle: string; email: string; password: string; course: string; semester: string; inviteCode: string }
+  | { mode: 'signup'; name: string; handle: string; email: string; password: string; course: string; campus: string; semester: string; inviteCode: string }
   | { mode: 'login'; email: string; password: string }
   /** Entrar com código por e-mail (esqueci a senha / conta sem senha). */
   | { mode: 'code'; email: string };
@@ -404,7 +404,7 @@ function useCampusState() {
           }
           pendingPassword.current = input.mode === 'signup' ? input.password : null;
           await remote.requestCode(input.email, input.mode === 'signup'
-            ? { name: input.name, handle, course: input.course, semester: input.semester, inviteCode: input.inviteCode } : undefined);
+            ? { name: input.name, handle, course: input.course, campus: input.campus, semester: input.semester, inviteCode: input.inviteCode } : undefined);
           return true;
         }
         const s = stateRef.current;
@@ -429,7 +429,7 @@ function useCampusState() {
         const institutional = isInstitutionalEmail(email) && !Object.values(s.users).some((u) => u.institutionalEmail === email);
         const user: User = {
           id, communityId: activeCommunity().id, name: input.name.trim(), handle, email,
-          course: input.course.trim(), semester: input.semester, interests: [],
+          course: input.course.trim(), campus: input.campus || undefined, semester: input.semester, interests: [],
           color: avatarColors[Crypto.getRandomBytes(1)[0]! % avatarColors.length]!,
           verification: institutional ? 'email' : 'pending',
           institutionalEmail: institutional ? email : undefined,
@@ -570,7 +570,7 @@ function useCampusState() {
       resetDemo() {
         if (!SUPABASE_ENABLED) setState(demoState());
       },
-      updateProfile(patch: Partial<Pick<User, 'name' | 'handle' | 'course' | 'semester' | 'interests'>>) {
+      updateProfile(patch: Partial<Pick<User, 'name' | 'handle' | 'course' | 'campus' | 'semester' | 'interests'>>) {
         local((s, m) => ({ ...s, users: { ...s.users, [m]: { ...s.users[m]!, ...patch } } }));
         sync((m) => remote.updateProfile(m, patch));
       },

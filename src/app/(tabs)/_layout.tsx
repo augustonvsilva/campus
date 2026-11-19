@@ -40,7 +40,7 @@ export default function TabsLayout() {
   if (me && !onboarded && me.joinedAt > now - NEW_ACCOUNT_MS) return <Redirect href="/boas-vindas" />;
   return (
     <Tabs
-      screenOptions={({ navigation }) => ({
+      screenOptions={{
         headerShown: false,
         // No computador o menu lateral substitui a barra; no celular ela flutua sobre o conteúdo.
         tabBarStyle: wide ? { display: 'none' } : {
@@ -51,17 +51,9 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.accentSoft,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontWeight: '900', fontSize: 11, letterSpacing: 0.3 },
-        // No navegador as abas ficam todas montadas, empilhadas uma sobre a outra, e o fundo é
-        // transparente (para o logo aparecer): sem esconder as inativas, elas vazam por trás da atual.
-        // visibility em vez de display:none para cada aba manter a posição da rolagem (e, ao contrário
-        // de opacidade, também some para leitor de tela, teclado e cliques).
-        sceneStyle: Platform.OS === 'web'
-          ? {
-            backgroundColor: 'transparent',
-            ...(navigation.isFocused() ? null : { visibility: 'hidden', pointerEvents: 'none' as const }),
-          }
-          : { backgroundColor: colors.bg },
-      })}>
+        // Transparente no navegador (logo ao fundo); as abas inativas somem pela regra [inert] em app/_layout.tsx.
+        sceneStyle: { backgroundColor: Platform.OS === 'web' ? 'transparent' : colors.bg },
+      }}>
       <Tabs.Screen name="index" options={{ title: 'Início', tabBarIcon: icon('home') }} />
       <Tabs.Screen name="agora" options={{ title: 'Agora', tabBarIcon: icon('flash') }} />
       <Tabs.Screen name="novo" options={{ title: 'Criar', tabBarButton: () => <CreateTabButton /> }} />

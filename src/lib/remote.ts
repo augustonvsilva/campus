@@ -61,7 +61,7 @@ const colorFor = (id: string) => avatarColors[[...id].reduce((n, ch) => n + ch.c
 
 // ───────────────────────── Linhas do banco ─────────────────────────
 interface ProfileRow {
-  id: string; community_id: string; name: string; handle: string | null; course: string | null; semester: string | null;
+  id: string; community_id: string; name: string; handle: string | null; course: string | null; campus: string | null; semester: string | null;
   interests: string[]; verification: Verification; role: Role; profile_visible: boolean; show_bora_participation: boolean;
   avatar_path: string | null; created_at: string;
 }
@@ -163,7 +163,7 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
   for (const p of profileRows) {
     users[p.id] = {
       id: p.id, communityId: p.community_id, name: p.name, handle: p.handle ?? p.name.split(' ')[0]!.toLowerCase(),
-      course: p.course ?? undefined, semester: p.semester ?? undefined, interests: p.interests ?? [],
+      course: p.course ?? undefined, campus: p.campus ?? undefined, semester: p.semester ?? undefined, interests: p.interests ?? [],
       color: colorFor(p.id), avatarUrl: p.avatar_path ? avatars[p.avatar_path] : undefined, profileVisible: p.profile_visible,
       verification: p.verification, role: p.role, joinedAt: Date.parse(p.created_at),
     };
@@ -241,7 +241,7 @@ export async function fetchSnapshot(userId: ID): Promise<Snapshot> {
 }
 
 // ───────────────────────── Autenticação (código por e-mail) ─────────────────────────
-export interface SignupMeta { name: string; handle: string; course: string; semester: string; inviteCode: string }
+export interface SignupMeta { name: string; handle: string; course: string; campus: string; semester: string; inviteCode: string }
 
 export async function handleAvailable(handle: string): Promise<boolean> {
   const res = must(await sb().rpc('handle_available', { p_handle: handle }));
@@ -254,7 +254,7 @@ export async function requestCode(email: string, signup?: SignupMeta) {
     options: {
       shouldCreateUser: !!signup,
       data: signup ? {
-        name: signup.name.trim(), handle: signup.handle, course: signup.course.trim(), semester: signup.semester,
+        name: signup.name.trim(), handle: signup.handle, course: signup.course.trim(), campus: signup.campus, semester: signup.semester,
         invite_code: signup.inviteCode.trim().toUpperCase(),
       } : undefined,
     },
@@ -437,11 +437,12 @@ export async function setBlock(me: ID, userId: ID, on: boolean) {
   else must(await sb().from('blocks').delete().match({ blocker_id: me, blocked_id: userId }));
 }
 
-export async function updateProfile(me: ID, patch: Partial<Pick<User, 'name' | 'handle' | 'course' | 'semester' | 'interests'>>) {
+export async function updateProfile(me: ID, patch: Partial<Pick<User, 'name' | 'handle' | 'course' | 'campus' | 'semester' | 'interests'>>) {
   must(await sb().from('profiles').update({
     ...(patch.name !== undefined && { name: patch.name }),
     ...(patch.handle !== undefined && { handle: patch.handle }),
     ...('course' in patch && { course: patch.course ?? null }),
+    ...('campus' in patch && { campus: patch.campus ?? null }),
     ...('semester' in patch && { semester: patch.semester ?? null }),
     ...(patch.interests !== undefined && { interests: patch.interests }),
   }).eq('id', me));

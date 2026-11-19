@@ -9,6 +9,16 @@ import { WIDE } from '@/components/ui';
 import { isModerator, StoreProvider, useStore } from '@/lib/store';
 import { colors, themeMode } from '@/theme';
 
+// No navegador as telas são transparentes (o logo aparece ao fundo), e a navegação deixa montadas, por
+// baixo da atual, as abas inativas e as telas anteriores, todas marcadas com o atributo `inert`.
+// Sem esta regra elas vazam por trás da tela atual. visibility (e não display:none) mantém a rolagem.
+if (Platform.OS === 'web' && typeof document !== 'undefined' && !document.getElementById('campus-inert')) {
+  const style = document.createElement('style');
+  style.id = 'campus-inert';
+  style.textContent = '[inert] { visibility: hidden; }';
+  document.head.appendChild(style);
+}
+
 /** Largura máxima da coluna de conteúdo (feed e telas). */
 const MAX_WIDTH = 980;
 /** A partir desta largura aparece também a coluna da direita (em alta, pessoas). */

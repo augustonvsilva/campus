@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BrandWatermark, Button, CampusLogo, Chip, ChipRow, CommunityPicker, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { BrandWatermark, Button, CampusLogo, Chip, ChipRow, CampusPicker, CommunityPicker, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
 import { ACTIVE_COMMUNITIES } from '@/lib/community';
 import { NOT_AFFILIATED } from '@/lib/legal';
@@ -32,11 +32,15 @@ export default function Entrar() {
   const [newPassword, setNewPassword] = useState('');
   const [handle, setHandle] = useState('');
   const [course, setCourse] = useState('');
+  const [campusChoice, setCampus] = useState('');
   const [semester, setSemester] = useState('');
   const [code, setCode] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Universidade com um campus só: já vem escolhido.
+  const campus = community.campuses.some((c) => c.name === campusChoice)
+    ? campusChoice : community.campuses.length === 1 ? community.campuses[0]!.name : '';
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -67,6 +71,7 @@ export default function Entrar() {
     if (nick) return nick;
     const pw = passwordProblem(password);
     if (pw) return pw;
+    if (!campus) return 'Escolha seu campus.';
     if (course.trim().length < 2) return 'Escolha seu curso.';
     if (!semester) return 'Escolha seu semestre.';
     if (!accepted) return 'Para entrar, aceite os Termos de uso e a Política de Privacidade.';
@@ -86,7 +91,7 @@ export default function Entrar() {
       const needsCode = await actions.startSignIn(
         mode === 'login'
           ? { mode, email, password }
-          : { mode, email, password, name, handle, course, semester, inviteCode: invite },
+          : { mode, email, password, name, handle, course, campus, semester, inviteCode: invite },
       );
       if (needsCode) {
         setCodeFor('signup');
@@ -149,10 +154,12 @@ export default function Entrar() {
                   if (id === community.id) return;
                   // Cursos e convites mudam com a universidade.
                   setCourse('');
+                  setCampus('');
                   setError(null);
                   void actions.chooseCommunity(id);
                 }} />
             ) : null}
+            {mode === 'signup' ? <CampusPicker value={campus} onChange={edit(setCampus)} campuses={community.campuses} /> : null}
             <ChipRow>
               <Chip label="Tenho um convite" icon="mail-open-outline" active={mode === 'signup'} onPress={() => switchMode('signup')} />
               <Chip label="Já tenho conta" icon="log-in-outline" active={mode === 'login'} onPress={() => switchMode('login')} />

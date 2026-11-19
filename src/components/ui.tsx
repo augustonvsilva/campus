@@ -421,6 +421,47 @@ export function CommunityPicker({ value, onChange, communities }: {
   );
 }
 
+/** Escolha do campus entre os da universidade (com o endereço embaixo de cada um). */
+export function CampusPicker({ value, onChange, campuses }: {
+  value: string; onChange: (v: string) => void; campuses: { name: string; address?: string; city?: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const current = campuses.find((c) => c.name === value);
+  const detail = (c: { address?: string; city?: string }) => [c.address, c.city].filter(Boolean).join(' · ');
+
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.fieldLabel}>Seu campus</Text>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel="Escolher campus"
+        accessibilityState={{ expanded: open }}
+        style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }]}>
+        <Ionicons name="location-outline" size={16} color={colors.muted} />
+        <Text style={{ color: current ? colors.text : colors.muted, fontSize: 15, flex: 1 }} numberOfLines={1}>
+          {current?.name ?? 'Escolha seu campus'}
+        </Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <View style={{ borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, padding: 8, gap: 2, ...hardShadow(4) }}>
+          {campuses.map((c) => (
+            <Pressable key={c.name} onPress={() => { onChange(c.name); setOpen(false); }} accessibilityRole="button"
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 8, borderRadius: radius.sm }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '800' }}>{c.name}</Text>
+                {detail(c) ? <Text style={styles.hint} numberOfLines={1}>{detail(c)}</Text> : null}
+              </View>
+              {c.name === value ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function ToggleRow({ label, hint, value, onValueChange }: {
   label: string; hint?: string; value: boolean; onValueChange: (v: boolean) => void;
 }) {
