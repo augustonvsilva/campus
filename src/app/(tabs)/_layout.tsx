@@ -53,11 +53,12 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontWeight: '900', fontSize: 11, letterSpacing: 0.3 },
         // No navegador as abas ficam todas montadas, empilhadas uma sobre a outra, e o fundo é
         // transparente (para o logo aparecer): sem esconder as inativas, elas vazam por trás da atual.
-        // Opacidade em vez de display:none para cada aba manter a posição da rolagem.
+        // visibility em vez de display:none para cada aba manter a posição da rolagem (e, ao contrário
+        // de opacidade, também some para leitor de tela, teclado e cliques).
         sceneStyle: Platform.OS === 'web'
           ? {
             backgroundColor: 'transparent',
-            ...(navigation.isFocused() ? null : { opacity: 0, pointerEvents: 'none' as const }),
+            ...(navigation.isFocused() ? null : { visibility: 'hidden', pointerEvents: 'none' as const }),
           }
           : { backgroundColor: colors.bg },
       })}>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BrandWatermark, Button, CampusLogo, Chip, ChipRow, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
+import { BrandWatermark, Button, CampusLogo, Chip, ChipRow, CommunityPicker, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
 import { ACTIVE_COMMUNITIES } from '@/lib/community';
 import { NOT_AFFILIATED } from '@/lib/legal';
@@ -144,20 +144,14 @@ export default function Entrar() {
         ) : (
           <>
             {ACTIVE_COMMUNITIES.length > 1 ? (
-              <View style={{ gap: 8 }}>
-                <Text style={styles.fieldLabel}>Sua universidade</Text>
-                <ChipRow>
-                  {ACTIVE_COMMUNITIES.map((c) => (
-                    <Chip key={c.id} label={c.shortName} icon="school-outline" active={community.id === c.id}
-                      onPress={() => {
-                        // Cursos e convites mudam com a universidade.
-                        setCourse('');
-                        setError(null);
-                        void actions.chooseCommunity(c.id);
-                      }} />
-                  ))}
-                </ChipRow>
-              </View>
+              <CommunityPicker value={community.id} communities={ACTIVE_COMMUNITIES}
+                onChange={(id) => {
+                  if (id === community.id) return;
+                  // Cursos e convites mudam com a universidade.
+                  setCourse('');
+                  setError(null);
+                  void actions.chooseCommunity(id);
+                }} />
             ) : null}
             <ChipRow>
               <Chip label="Tenho um convite" icon="mail-open-outline" active={mode === 'signup'} onPress={() => switchMode('signup')} />

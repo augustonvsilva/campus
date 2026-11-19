@@ -665,6 +665,8 @@ await check('excluir conta (confirmação pelo nome de usuário)', async () => {
 await check('PUC-SP: escolher a universidade na entrada, cadastro com cursos e capa próprios', async () => {
   await page.goto(BASE);
   await visible('Sua universidade');
+  await page.getByRole('button', { name: 'Escolher universidade' }).click();
+  await page.getByPlaceholder('Buscar universidade').fill('puc');
   await page.getByText('PUC-SP', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await visible('PUC-SP · ACESSO POR CONVITE');
   await visible('Pontifícia Universidade Católica de São Paulo', { exact: false });
@@ -694,6 +696,8 @@ await check('PUC-SP e Mackenzie têm dados separados (reabrir lembra a universid
   await visible('@lia.prado · PUC-SP', { exact: false });
   await page.getByText('Sair', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await visible('PUC-SP · ACESSO POR CONVITE');
+  await page.getByRole('button', { name: 'Escolher universidade' }).click();
+  await page.getByPlaceholder('Buscar universidade').fill('mack');
   await page.getByText('Mackenzie', { exact: true }).locator('visible=true').and(LIVE).first().click();
   await visible('MACKENZIE · ACESSO POR CONVITE');
   await page.getByText('Já tenho conta').click();

@@ -363,6 +363,64 @@ export function CoursePicker({ value, onChange, courses }: { value: string; onCh
   );
 }
 
+/** Escolha da universidade numa lista com busca (pela sigla ou pelo nome completo). */
+export function CommunityPicker({ value, onChange, communities }: {
+  value: string; onChange: (id: string) => void; communities: { id: string; name: string; shortName: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const q = fold(query.trim());
+  const filtered = communities.filter((c) => fold(`${c.shortName} ${c.name}`).includes(q));
+  const current = communities.find((c) => c.id === value);
+
+  const choose = (id: string) => {
+    onChange(id);
+    setOpen(false);
+    setQuery('');
+  };
+
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.fieldLabel}>Sua universidade</Text>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel="Escolher universidade"
+        accessibilityState={{ expanded: open }}
+        style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }]}>
+        <Ionicons name="school-outline" size={16} color={colors.muted} />
+        <Text style={{ color: current ? colors.text : colors.muted, fontSize: 15, flex: 1 }} numberOfLines={1}>
+          {current ? `${current.shortName} · ${current.name}` : 'Escolha sua universidade'}
+        </Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <View style={{ borderWidth: 2, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, padding: 8, gap: 2, ...hardShadow(4) }}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar universidade"
+            placeholderTextColor={colors.muted}
+            autoCorrect={false}
+            style={[styles.input, { marginBottom: 4 }]}
+          />
+          {filtered.map((c) => (
+            <Pressable key={c.id} onPress={() => choose(c.id)} accessibilityRole="button"
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 8, borderRadius: radius.sm }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 15, fontWeight: '800' }}>{c.shortName}</Text>
+                <Text style={styles.hint} numberOfLines={1}>{c.name}</Text>
+              </View>
+              {c.id === value ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
+            </Pressable>
+          ))}
+          {!filtered.length ? <Text style={[styles.hint, { padding: 8 }]}>Nenhuma universidade encontrada.</Text> : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function ToggleRow({ label, hint, value, onValueChange }: {
   label: string; hint?: string; value: boolean; onValueChange: (v: boolean) => void;
 }) {

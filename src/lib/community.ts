@@ -1,3 +1,4 @@
+import { SAO_PAULO } from './communities-sp';
 import type { Community } from './types';
 
 // Graduação presencial da Universidade (Higienópolis, Alphaville e Campinas). Variantes de turma
@@ -18,8 +19,8 @@ const EAD = [
   'Marketing', 'Matemática', 'Pedagogia', 'Processos Gerenciais', 'Segurança Cibernética', 'Teologia',
 ].map((c) => `${c} (EAD)`);
 
-// Lançamento: apenas Mackenzie. Novas universidades entram como novos registros
-// aqui (e na tabela `communities` do backend), sem mudar o resto do app.
+// Novas universidades entram como novos registros aqui ou em communities-sp.ts
+// (e na tabela `communities` do backend), sem mudar o resto do app.
 export const MACKENZIE: Community = {
   id: 'mackenzie',
   name: 'Universidade Presbiteriana Mackenzie',
@@ -28,6 +29,12 @@ export const MACKENZIE: Community = {
   status: 'ativa',
   invitePrefix: 'MACK',
   mainCampus: 'Campus Higienópolis',
+  // Endereços conforme mackenzie.br (consultado em 19/11/2026).
+  campuses: [
+    { name: 'Campus Higienópolis', address: 'Rua da Consolação, 930 – Consolação' },
+    { name: 'Campus Alphaville', address: 'Av. Mackenzie, 905 – Tamboré', city: 'Barueri' },
+    { name: 'Campus Campinas', address: 'Av. Brasil, 1220 – Jardim Guanabara', city: 'Campinas' },
+  ],
   // TODO: confirmar com a instituição os domínios usados por alunos.
   emailDomains: ['mackenzista.com.br', 'mackenzie.br'],
   // Conforme mackenzie.br/graduacao (consultado em 14/11/2026). Ordem alfabética, presencial e EAD juntos.
@@ -56,6 +63,15 @@ export const PUC_SP: Community = {
   status: 'ativa',
   invitePrefix: 'PUC',
   mainCampus: 'Campus Monte Alegre',
+  // Conforme pucsp.br/universidade/campi-e-unidades-suplementares (consultado em 19/11/2026).
+  // O site chama o Monte Alegre de "Campus Perdizes". Sorocaba entra porque é onde fica Medicina.
+  campuses: [
+    { name: 'Campus Monte Alegre', address: 'Rua Monte Alegre, 984 – Perdizes' },
+    { name: 'Campus Consolação', address: 'Rua Marquês de Paranaguá, 111 – Consolação' },
+    { name: 'Campus Ipiranga', address: 'Av. Nazaré, 993 – Ipiranga' },
+    { name: 'Campus Santana', address: 'Rua Voluntários da Pátria, 1653 – Santana' },
+    { name: 'Campus Sorocaba', address: 'Rua Joubert Wey, 290', city: 'Sorocaba' },
+  ],
   // TODO: confirmar com a instituição os domínios usados por alunos.
   emailDomains: ['pucsp.edu.br'],
   courses: [
@@ -80,7 +96,8 @@ export const PUC_SP: Community = {
   },
 };
 
-export const COMMUNITIES: Community[] = [MACKENZIE, PUC_SP];
+// Mackenzie e PUC-SP primeiro (as pioneiras); depois as demais da capital, em communities-sp.ts.
+export const COMMUNITIES: Community[] = [MACKENZIE, PUC_SP, ...SAO_PAULO];
 
 /** Universidades que aparecem para escolher no cadastro e no login (status 'ativa'). */
 export const ACTIVE_COMMUNITIES = COMMUNITIES.filter((c) => c.status === 'ativa');

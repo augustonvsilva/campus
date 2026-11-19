@@ -444,5 +444,25 @@ const pucaRow = (await rows(`select community_id, verification from profiles whe
 pucaRow?.community_id === 'puc-sp' && pucaRow?.verification === 'email'
   ? ok('aluna da PUC-SP verificada pelo @pucsp.edu.br') : bad('cadastro na PUC-SP', JSON.stringify(pucaRow));
 
+console.log('Faculdades da capital (0011)');
+const sql0011 = readFileSync(`${root}/supabase/migrations/0011_faculdades_sp.sql`, 'utf8');
+await expectOk('migrations/0011_faculdades_sp.sql', () => db.exec(sql0011));
+await expectOk('0011 pode rodar de novo sem erro', () => db.exec(sql0011));
+await db.exec('set role anon');
+(await rows(`select id from communities where id in ('usp', 'fgv', 'fiap', 'sao-judas')`)).length === 4
+  ? ok('faculdades da capital ativas aparecem') : bad('faculdades da capital não aparecem');
+await db.exec('reset role');
+const uspa = await expectOk('cadastro na USP com o convite dos fundadores', () => newUser('caio@usp.br', { name: 'Caio', invite_code: 'usp-fundadores' }));
+const uspaRow = (await rows(`select community_id, verification from profiles where id = $1`, [uspa]))[0];
+uspaRow?.community_id === 'usp' && uspaRow?.verification === 'email'
+  ? ok('aluno da USP verificado pelo @usp.br') : bad('cadastro na USP', JSON.stringify(uspaRow));
+const sjt = await expectOk('cadastro na São Judas (sem domínio próprio)', () => newUser('rui@ulife.com.br', { name: 'Rui', invite_code: 'USJT-FUNDADORES' }));
+(await rows(`select verification from profiles where id = $1`, [sjt]))[0]?.verification === 'pending'
+  ? ok('e-mail do grupo Ânima não verifica sozinho (vai para comprovante)') : bad('São Judas verificou pelo e-mail do grupo');
+await db.exec(`update communities set is_active = false where id = 'fiap'`);
+await expectOk('0011 de novo depois de desligar uma', () => db.exec(sql0011));
+(await rows(`select is_active from communities where id = 'fiap'`))[0]?.is_active === false
+  ? ok('rodar a 0011 de novo não religa faculdade desligada') : bad('0011 religou a FIAP');
+
 console.log(failures ? `\n${failures} FALHA(S)` : '\nTodos os cenários passaram.');
 process.exit(failures ? 1 : 0);

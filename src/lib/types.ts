@@ -19,6 +19,8 @@ export interface Community {
   invitePrefix: string;
   /** Campus principal, usado nos textos de exemplo. Ex.: "Campus Higienópolis". */
   mainCampus: string;
+  /** Campi (unidades) da universidade, com endereço quando conhecido. O principal vem primeiro. */
+  campuses: CampusUnit[];
   /**
    * ativa: aparece no app. dormindo: já configurada, mas desligada até o lançamento
    * (dá para testar no site de demonstração com ?comunidade=<id>).
@@ -26,6 +28,16 @@ export interface Community {
   status: 'ativa' | 'dormindo';
   /** Foto do campus usada como fundo. Sem ela, o fundo mostra só o logo do Campus. */
   cover?: CampusPhoto;
+}
+
+/** Um campus (unidade) da universidade. */
+export interface CampusUnit {
+  /** Nome oficial. Ex.: "Campus Higienópolis". */
+  name: string;
+  /** Endereço curto (rua, número e bairro), usado no link do mapa. */
+  address?: string;
+  /** Cidade, quando não é a da universidade. Ex.: "Barueri". */
+  city?: string;
 }
 
 /** Foto de fundo de uma universidade: precisa ter licença que permita o uso, com crédito. */

@@ -11,6 +11,7 @@ import { PhotoCredit } from '@/components/shell';
 import { GroupCard } from '@/components/social';
 import { pickAvatar } from '@/lib/images';
 import { NOT_AFFILIATED } from '@/lib/legal';
+import { openMap } from '@/lib/links';
 import { followersOf, followingOf } from '@/lib/social';
 import { canPublish, isModerator, useMe, useStore } from '@/lib/store';
 import { colors } from '@/theme';
@@ -149,7 +150,21 @@ function EvidenceVerification() {
 
 function VerificationSection() {
   const me = useMe();
+  const { community } = useStore();
   const [method, setMethod] = useState<'email' | 'comprovante'>('email');
+  // Universidade sem domínio próprio para alunos (ex.: e-mail do grupo, igual ao de outras): só comprovante.
+  if (!community.emailDomains.length) {
+    return (
+      <Section title="Verificação de vínculo">
+        <Card>
+          {me.verification === 'rejected' ? (
+            <Notice tone="warn" icon="close-circle" text="Não conseguimos confirmar seu vínculo pelo comprovante. Envie um novo comprovante." />
+          ) : null}
+          <EvidenceVerification />
+        </Card>
+      </Section>
+    );
+  }
 
   return (
     <Section title="Verificação de vínculo">
@@ -436,6 +451,25 @@ export default function Perfil() {
             ))}
           </Card>
         )}
+      </Section>
+
+      <Section title={community.shortName}>
+        <Card>
+          <Text style={styles.body}>{community.name}</Text>
+          {community.campuses.map((c) => (
+            <Pressable key={c.name} accessibilityRole="link" accessibilityLabel={`${c.name}: abrir no mapa`}
+              onPress={() => openMap(c.address ?? `${community.shortName} ${c.name}`, c.city ?? community.city)}
+              style={[styles.row, { justifyContent: 'space-between', gap: 10 }]}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.body, { fontWeight: '800' }]}>{c.name}</Text>
+                {c.address || c.city ? (
+                  <Text style={styles.hint}>{[c.address, c.city].filter(Boolean).join(' · ')}</Text>
+                ) : null}
+              </View>
+              <Ionicons name="map-outline" size={18} color={colors.muted} />
+            </Pressable>
+          ))}
+        </Card>
       </Section>
 
       <Section title="Sobre">
