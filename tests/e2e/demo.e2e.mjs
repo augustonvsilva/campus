@@ -668,6 +668,24 @@ await check('excluir conta (confirmação pelo nome de usuário)', async () => {
   await visible('Não encontramos uma conta com esse e-mail neste aparelho.');
 });
 
+await check('cursos filtrados pelo campus (USP: EACH não tem Medicina)', async () => {
+  await page.goto(BASE);
+  await page.getByRole('button', { name: 'Escolher universidade' }).click();
+  await page.getByPlaceholder('Buscar universidade').fill('usp');
+  await page.getByText('USP', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByRole('button', { name: 'Escolher campus' }).click();
+  await page.getByText('EACH – USP Leste', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByRole('button', { name: 'Escolher curso' }).click();
+  await visible('Gerontologia', { exact: true });
+  if (await page.getByText('Medicina', { exact: true }).locator('visible=true').and(LIVE).count()) throw new Error('Medicina apareceu na EACH');
+  await page.getByRole('button', { name: 'Escolher curso' }).click();
+  await page.getByRole('button', { name: 'Escolher campus' }).click();
+  await page.getByText('Quadrilátero da Saúde (Cerqueira César)', { exact: true }).locator('visible=true').and(LIVE).first().click();
+  await page.getByRole('button', { name: 'Escolher curso' }).click();
+  await visible('Medicina', { exact: true });
+  await shot('15b-cursos-por-campus');
+});
+
 await check('PUC-SP: escolher a universidade na entrada, cadastro com cursos e capa próprios', async () => {
   await page.goto(BASE);
   await visible('Sua universidade');

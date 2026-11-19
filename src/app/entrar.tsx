@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandWatermark, Button, CampusLogo, Chip, ChipRow, CampusPicker, CommunityPicker, CoursePicker, Field, Notice, PasswordField, SemesterPicker, styles, ToggleRow } from '@/components/ui';
 import { handleProblem, HANDLE_MAX, normalizeHandle, passwordProblem } from '@/lib/handle';
-import { ACTIVE_COMMUNITIES } from '@/lib/community';
+import { ACTIVE_COMMUNITIES, coursesFor } from '@/lib/community';
 import { NOT_AFFILIATED } from '@/lib/legal';
 import { useStore } from '@/lib/store';
 import { colors } from '@/theme';
@@ -159,7 +159,14 @@ export default function Entrar() {
                   void actions.chooseCommunity(id);
                 }} />
             ) : null}
-            {mode === 'signup' ? <CampusPicker value={campus} onChange={edit(setCampus)} campuses={community.campuses} /> : null}
+            {mode === 'signup' ? (
+              <CampusPicker value={campus} campuses={community.campuses}
+                onChange={edit((c: string) => {
+                  setCampus(c);
+                  // O curso escolhido pode não existir no novo campus.
+                  if (course && community.courses.includes(course) && !coursesFor(community, c).includes(course)) setCourse('');
+                })} />
+            ) : null}
             <ChipRow>
               <Chip label="Tenho um convite" icon="mail-open-outline" active={mode === 'signup'} onPress={() => switchMode('signup')} />
               <Chip label="Já tenho conta" icon="log-in-outline" active={mode === 'login'} onPress={() => switchMode('login')} />
@@ -202,7 +209,7 @@ export default function Entrar() {
               />
               {mode === 'signup' ? (
                 <>
-                  <CoursePicker value={course} onChange={edit(setCourse)} courses={community.courses} />
+                  <CoursePicker value={course} onChange={edit(setCourse)} courses={coursesFor(community, campus)} />
                   <SemesterPicker value={semester} onChange={edit(setSemester)} />
                   <ToggleRow
                     label="Li e aceito os Termos de uso e a Política de Privacidade"

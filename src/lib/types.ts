@@ -38,6 +38,11 @@ export interface CampusUnit {
   address?: string;
   /** Cidade, quando não é a da universidade. Ex.: "Barueri". */
   city?: string;
+  /**
+   * Cursos dados neste campus (nomes iguais aos de `courses` da universidade). Sem a lista, o cadastro
+   * mostra todos os cursos. Só preencha quando souber a divisão completa: curso fora de todos os campi some.
+   */
+  courses?: string[];
 }
 
 /** Foto de fundo de uma universidade: precisa ter licença que permita o uso, com crédito. */

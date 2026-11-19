@@ -133,6 +133,13 @@ export function communityFromLink(): string | null {
   }
 }
 
+/** Cursos para escolher no cadastro: os do campus, quando a universidade informa a divisão; senão, todos. */
+export function coursesFor(community: Community, campusName?: string): string[] {
+  const campus = community.campuses.find((c) => c.name === campusName);
+  if (!campus?.courses?.length) return community.courses;
+  return community.courses.filter((c) => campus.courses!.includes(c));
+}
+
 export function emailDomain(email: string): string {
   return email.trim().toLowerCase().split('@')[1] ?? '';
 }

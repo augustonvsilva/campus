@@ -24,10 +24,44 @@ export const USP: Community = {
   invitePrefix: 'USP',
   mainCampus: 'Cidade Universitária Armando de Salles Oliveira (Butantã)',
   campuses: [
-    { name: 'Cidade Universitária Armando de Salles Oliveira (Butantã)', address: 'R. da Reitoria, 374 – Butantã' },
-    { name: 'Quadrilátero da Saúde (Cerqueira César)', address: 'Av. Dr. Arnaldo, 455 – Cerqueira César' },
-    { name: 'Faculdade de Direito (Largo São Francisco)', address: 'Largo São Francisco, 95 – Sé' },
-    { name: 'EACH – USP Leste', address: 'R. Arlindo Béttio, 1000 – Ermelino Matarazzo' },
+    {
+      name: 'Cidade Universitária Armando de Salles Oliveira (Butantã)', address: 'R. da Reitoria, 374 – Butantã',
+      courses: [
+        'Administração', 'Arquitetura e Urbanismo', 'Artes Cênicas', 'Artes Visuais', 'Astronomia', 'Audiovisual',
+        'Biblioteconomia e Ciência da Informação', 'Ciência da Computação', 'Ciências Atuariais',
+        'Ciências Biológicas', 'Ciências Biomédicas', 'Ciências Contábeis', 'Ciências Econômicas',
+        'Ciências Sociais', 'Design', 'Editoração', 'Educação Física e Esporte', 'Educomunicação',
+        'Engenharia Ambiental', 'Engenharia Civil', 'Engenharia Elétrica', 'Engenharia Mecatrônica',
+        'Engenharia Mecânica', 'Engenharia Metalúrgica', 'Engenharia Naval', 'Engenharia Química',
+        'Engenharia de Computação', 'Engenharia de Materiais', 'Engenharia de Minas', 'Engenharia de Produção',
+        'Estatística', 'Farmácia', 'Filosofia', 'Física', 'Geociências e Educação Ambiental', 'Geofísica',
+        'Geografia', 'Geologia', 'História', 'Jornalismo', 'Letras', 'Matemática', 'Matemática Aplicada',
+        'Matemática Aplicada e Computacional', 'Medicina Veterinária', 'Meteorologia', 'Música', 'Oceanografia',
+        'Odontologia', 'Pedagogia', 'Psicologia', 'Publicidade e Propaganda', 'Química', 'Relações Internacionais',
+        'Relações Públicas', 'Turismo',
+      ],
+    },
+    {
+      name: 'Quadrilátero da Saúde (Cerqueira César)', address: 'Av. Dr. Arnaldo, 455 – Cerqueira César',
+      courses: [
+        'Enfermagem', 'Fisioterapia', 'Fonoaudiologia', 'Medicina', 'Nutrição', 'Saúde Pública',
+        'Terapia Ocupacional',
+      ],
+    },
+    {
+      name: 'Faculdade de Direito (Largo São Francisco)', address: 'Largo São Francisco, 95 – Sé',
+      courses: [
+        'Direito',
+      ],
+    },
+    {
+      name: 'EACH – USP Leste', address: 'R. Arlindo Béttio, 1000 – Ermelino Matarazzo',
+      courses: [
+        'Biotecnologia', 'Ciências da Natureza', 'Educação Física e Saúde', 'Gerontologia', 'Gestão Ambiental',
+        'Gestão de Políticas Públicas', 'Lazer e Turismo', 'Marketing', 'Obstetrícia', 'Sistemas de Informação',
+        'Têxtil e Moda',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. Alta: alunos de graduação recebem e-mail institucional @usp.br
   // (nome.sobrenome@usp.br), o mesmo domínio de docentes/servidores. Não há subdomínio só de alunos.
@@ -149,8 +183,20 @@ export const ESPM: Community = {
   invitePrefix: 'ESPM',
   mainCampus: 'Campus Álvaro Alvim',
   campuses: [
-    { name: 'Campus Álvaro Alvim', address: 'Rua Dr. Álvaro Alvim, 123 – Vila Mariana' },
-    { name: 'ESPM Tech', address: 'Rua Joaquim Távora, 1240 – Vila Mariana' },
+    {
+      name: 'Campus Álvaro Alvim', address: 'Rua Dr. Álvaro Alvim, 123 – Vila Mariana',
+      courses: [
+        'Administração', 'Cinema e Audiovisual', 'Ciências Sociais e do Consumo', 'Comunicação e Publicidade',
+        'Design', 'Direito', 'Gestão Comercial (Tecnólogo)', 'Gestão da Qualidade (Tecnólogo)',
+        'Gestão de Recursos Humanos (Tecnólogo)', 'Jornalismo', 'Logística (Tecnólogo)', 'Relações Internacionais',
+      ],
+    },
+    {
+      name: 'ESPM Tech', address: 'Rua Joaquim Távora, 1240 – Vila Mariana',
+      courses: [
+        'Ciência de Dados e Negócios',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. Alta para acad.espm.br: a Política de Privacidade da ESPM
   // (espm.br/politica-de-privacidade) lista @espm.br, @acad.espm.br e @espm.edu.br como domínios oficiais, e o FAQ
@@ -224,8 +270,19 @@ export const UNIFESP: Community = {
   invitePrefix: 'UNIF',
   mainCampus: 'Campus São Paulo',
   campuses: [
-    { name: 'Campus São Paulo', address: 'Rua Botucatu, 740 – Vila Clementino' },
-    { name: 'Campus Zona Leste', address: 'Av. Jacu-Pêssego, 2630 – Itaquera' },
+    {
+      name: 'Campus São Paulo', address: 'Rua Botucatu, 740 – Vila Clementino',
+      courses: [
+        'Biomedicina', 'Enfermagem', 'Fonoaudiologia', 'Informática em Saúde (Tecnólogo)', 'Medicina',
+        'Radiologia (Tecnólogo)', 'Tecnologia Oftálmica (Tecnólogo)',
+      ],
+    },
+    {
+      name: 'Campus Zona Leste', address: 'Av. Jacu-Pêssego, 2630 – Itaquera',
+      courses: [
+        'Arquitetura e Urbanismo', 'Geografia',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. Média-alta: a Unifesp usa @unifesp.br (Google Workspace, MX
   // aspmx.l.google.com) para alunos, docentes e servidores (formato comum nome.sobrenome@unifesp.br). Não há
@@ -304,9 +361,44 @@ export const ANHEMBI: Community = {
   invitePrefix: 'UAM',
   mainCampus: 'Unidade Mooca',
   campuses: [
-    { name: 'Unidade Mooca', address: 'Rua Dr. Almeida Lima, 1.134 – Mooca' },
-    { name: 'Unidade Paulista', address: 'Avenida Paulista, 2000 – Bela Vista' },
-    { name: 'Unidade Vila Olímpia', address: 'Rua Casa do Ator, 294 – Vila Olímpia' },
+    {
+      name: 'Unidade Mooca', address: 'Rua Dr. Almeida Lima, 1.134 – Mooca',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Aviação Civil',
+        'Biomedicina', 'Cinema e Audiovisual', 'Ciência da Computação', 'Ciências Biológicas', 'Ciências Contábeis',
+        'Ciências Econômicas', 'Comissário de Voo', 'Dança', 'Direito', 'Educação Física', 'Enfermagem',
+        'Engenharia Civil', 'Engenharia Elétrica', 'Engenharia Mecânica', 'Engenharia de Produção',
+        'Engenharia de Software', 'Estética', 'Farmácia', 'Fisioterapia', 'Fonoaudiologia', 'Gastronomia',
+        'Gestão Financeira', 'Gestão de Recursos Humanos', 'Jornalismo', 'Logística', 'Manutenção de Aeronaves',
+        'Marketing', 'Medicina', 'Medicina Veterinária', 'Nutrição', 'Pedagogia', 'Psicologia',
+        'Publicidade e Propaganda', 'Quiropraxia', 'Rádio, TV e Internet', 'Sistemas de Informação', 'Teatro',
+        'Terapia Ocupacional', 'Turismo',
+      ],
+    },
+    {
+      name: 'Unidade Paulista', address: 'Avenida Paulista, 2000 – Bela Vista',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Biomedicina',
+        'Cinema e Audiovisual', 'Ciência da Computação', 'Ciência de Dados', 'Ciências Econômicas',
+        'Comércio Exterior', 'Comércio Internacional', 'Design Digital', 'Design Gráfico', 'Design de Animação',
+        'Design de Games', 'Design de Interiores', 'Design de Moda', 'Direito', 'Engenharia de Software',
+        'Inteligência Artificial', 'Jornalismo', 'Marketing', 'Medicina Veterinária', 'Negócios da Moda',
+        'Pedagogia', 'Psicologia', 'Publicidade e Propaganda', 'Relações Internacionais', 'Relações Públicas',
+        'Rádio, TV e Internet', 'Sistemas de Informação', 'Terapia Ocupacional',
+      ],
+    },
+    {
+      name: 'Unidade Vila Olímpia', address: 'Rua Casa do Ator, 294 – Vila Olímpia',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Aviação Civil',
+        'Biomedicina', 'Ciência da Computação', 'Ciências Contábeis', 'Ciências Econômicas', 'Design Gráfico',
+        'Design de Games', 'Design de Moda', 'Direito', 'Enfermagem', 'Engenharia Civil', 'Engenharia Elétrica',
+        'Engenharia Mecânica', 'Engenharia da Computação', 'Engenharia de Produção', 'Engenharia de Software',
+        'Farmácia', 'Fisioterapia', 'Gastronomia', 'Inteligência Artificial', 'Jornalismo', 'Marketing',
+        'Medicina Veterinária', 'Nutrição', 'Pedagogia', 'Processos Gerenciais', 'Produção Fonográfica',
+        'Psicologia', 'Publicidade e Propaganda', 'Relações Públicas', 'Terapia Ocupacional',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. Sem domínio próprio: alunos usam @ulife.com.br, comum a todo o grupo Ânima
   // (não distingue a instituição). Verificação só por comprovante.
@@ -356,12 +448,68 @@ export const SAO_JUDAS: Community = {
   invitePrefix: 'USJT',
   mainCampus: 'Unidade Mooca',
   campuses: [
-    { name: 'Unidade Mooca', address: 'Rua Taquari, 546 – Mooca' },
-    { name: 'Unidade Butantã', address: 'Avenida Vital Brasil, 1000 – Butantã' },
-    { name: 'Unidade Paulista', address: 'Avenida Angélica, 2565 – Bela Vista' },
-    { name: 'Unidade Santana', address: 'Rua Voluntários da Pátria, 2624 – Santana' },
-    { name: 'Unidade Santo Amaro', address: 'Rua Alexandre Dumas, 2016 – Santo Amaro' },
-    { name: 'Unidade Vila Leopoldina', address: 'Avenida Imperatriz Leopoldina, 112 – Vila Leopoldina' },
+    {
+      name: 'Unidade Mooca', address: 'Rua Taquari, 546 – Mooca',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Biomedicina',
+        'Cinema e Audiovisual', 'Ciência da Computação', 'Ciências Biológicas', 'Ciências Contábeis',
+        'Ciências Econômicas', 'Comércio Exterior', 'Design', 'Design Gráfico', 'Design de Interiores', 'Direito',
+        'Educação Física', 'Enfermagem', 'Engenharia Biomédica', 'Engenharia Civil', 'Engenharia Elétrica',
+        'Engenharia Mecânica', 'Engenharia Química', 'Engenharia da Computação',
+        'Engenharia de Controle e Automação', 'Engenharia de Produção', 'Engenharia de Software', 'Farmácia',
+        'Filosofia', 'Fisioterapia', 'Fonoaudiologia', 'Gestão Comercial', 'Gestão de Recursos Humanos',
+        'Jornalismo', 'Letras - Português', 'Marketing', 'Medicina Veterinária', 'Nutrição', 'Odontologia',
+        'Pedagogia', 'Psicologia', 'Publicidade e Propaganda', 'Relações Internacionais', 'Relações Públicas',
+        'Segurança da Informação', 'Sistemas de Informação', 'Terapia Ocupacional',
+      ],
+    },
+    {
+      name: 'Unidade Butantã', address: 'Avenida Vital Brasil, 1000 – Butantã',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Biomedicina',
+        'Ciência da Computação', 'Ciências Contábeis', 'Ciências Econômicas', 'Direito', 'Engenharia Civil',
+        'Engenharia Mecânica', 'Engenharia de Produção', 'Engenharia de Software', 'Farmácia', 'Fisioterapia',
+        'Jornalismo', 'Letras - Português', 'Marketing', 'Medicina Veterinária', 'Nutrição', 'Pedagogia',
+        'Psicologia', 'Publicidade e Propaganda',
+      ],
+    },
+    {
+      name: 'Unidade Paulista', address: 'Avenida Angélica, 2565 – Bela Vista',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Biomedicina',
+        'Ciência da Computação', 'Ciências Contábeis', 'Ciências Econômicas', 'Design de Interiores', 'Direito',
+        'Enfermagem', 'Engenharia Civil', 'Engenharia da Computação', 'Engenharia de Produção',
+        'Engenharia de Software', 'Fisioterapia', 'Gestão Financeira', 'Jornalismo', 'Letras - Português',
+        'Marketing', 'Odontologia', 'Psicologia', 'Publicidade e Propaganda', 'Sistemas de Informação',
+      ],
+    },
+    {
+      name: 'Unidade Santana', address: 'Rua Voluntários da Pátria, 2624 – Santana',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Biomedicina',
+        'Ciência da Computação', 'Ciências Contábeis', 'Direito', 'Enfermagem', 'Engenharia Civil',
+        'Engenharia de Software', 'Fisioterapia', 'Letras - Português', 'Marketing', 'Medicina Veterinária',
+        'Psicologia',
+      ],
+    },
+    {
+      name: 'Unidade Santo Amaro', address: 'Rua Alexandre Dumas, 2016 – Santo Amaro',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Biomedicina',
+        'Ciências Contábeis', 'Ciências Econômicas', 'Direito', 'Engenharia Civil', 'Engenharia Elétrica',
+        'Engenharia de Software', 'Gestão de Recursos Humanos', 'Letras - Português', 'Psicologia',
+      ],
+    },
+    {
+      name: 'Unidade Vila Leopoldina', address: 'Avenida Imperatriz Leopoldina, 112 – Vila Leopoldina',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Biomedicina',
+        'Ciência da Computação', 'Ciências Contábeis', 'Ciências Econômicas', 'Comércio Exterior', 'Direito',
+        'Enfermagem', 'Engenharia Civil', 'Engenharia Elétrica', 'Engenharia Mecânica', 'Farmácia', 'Fisioterapia',
+        'Gestão Financeira', 'Gestão de Recursos Humanos', 'Letras - Português', 'Marketing',
+        'Medicina Veterinária', 'Nutrição', 'Odontologia', 'Psicologia',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. Sem domínio próprio: alunos usam @ulife.com.br, comum a todo o grupo Ânima
   // (não distingue a instituição). Verificação só por comprovante.
@@ -467,9 +615,31 @@ export const BELAS_ARTES: Community = {
   invitePrefix: 'BELAS',
   mainCampus: 'Campus Vila Mariana',
   campuses: [
-    { name: 'Campus Vila Mariana', address: 'Rua Dr. Álvaro Alvim, 90 – Vila Mariana' },
-    { name: 'Campus Paraíso', address: 'Rua Estela, 64 – Vila Mariana' },
-    { name: 'Campus Shopping Cidade Jardim', address: 'Av. Magalhães de Castro, 12.000, 2º andar – Cidade Jardim' },
+    {
+      name: 'Campus Vila Mariana', address: 'Rua Dr. Álvaro Alvim, 90 – Vila Mariana',
+      courses: [
+        'Arquitetura e Urbanismo', 'Artes Cênicas', 'Artes Plásticas', 'Artes Visuais', 'Cinema e Audiovisual',
+        'Conservação e Restauro', 'Dança', 'Design Digital', 'Design Gráfico', 'Design de Animação',
+        'Design de Games', 'Design de Interiores', 'Design de Moda', 'Design de Produto', 'Fotografia', 'História',
+        'Jogos Digitais', 'Licenciatura em Artes', 'Produção Audiovisual', 'Produção Cultural',
+        'Produção Fonográfica', 'Psicologia',
+      ],
+    },
+    {
+      name: 'Campus Paraíso', address: 'Rua Estela, 64 – Vila Mariana',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Comunicação Digital', 'Comércio Exterior',
+        'Escrita Criativa', 'Gestão de Negócios e Inovação', 'Jornalismo', 'Marketing', 'Negócios da Moda',
+        'Produção Multimídia', 'Produção Publicitária', 'Publicidade e Propaganda', 'Relações Internacionais',
+        'Relações Públicas', 'Rádio, TV e Internet',
+      ],
+    },
+    {
+      name: 'Campus Shopping Cidade Jardim', address: 'Av. Magalhães de Castro, 12.000, 2º andar – Cidade Jardim',
+      courses: [
+        'Design de Interiores', 'Design de Moda', 'Economia Criativa', 'Gastronomia',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. BAIXA. Não achei nenhuma fonte oficial dizendo qual é o e-mail do aluno.
   // belasartes.edu.br tem registro MX no Microsoft 365 (belasartes-edu-br.mail.protection.outlook.com), o que indica

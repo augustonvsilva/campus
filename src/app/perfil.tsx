@@ -10,6 +10,7 @@ import { HANDLE_MAX, normalizeHandle } from '@/lib/handle';
 import { PhotoCredit } from '@/components/shell';
 import { GroupCard } from '@/components/social';
 import { pickAvatar } from '@/lib/images';
+import { coursesFor } from '@/lib/community';
 import { NOT_AFFILIATED } from '@/lib/legal';
 import { openMap } from '@/lib/links';
 import { followersOf, followingOf } from '@/lib/social';
@@ -377,7 +378,7 @@ export default function Perfil() {
           <Field label="Nome de usuário" value={handle} onChangeText={(v) => setHandle(normalizeHandle(v).slice(0, HANDLE_MAX))}
             autoCapitalize="none" autoCorrect={false} hint={`Você aparece como @${normalizeHandle(handle) || '…'}`} />
           <CampusPicker value={campus} onChange={setCampus} campuses={community.campuses} />
-          <CoursePicker value={course} onChange={setCourse} courses={community.courses} />
+          <CoursePicker value={course} onChange={setCourse} courses={coursesFor(community, campus)} />
           <SemesterPicker value={semester} onChange={setSemester} />
           <Field label="Interesses" value={interests} onChangeText={setInterests} hint="Separados por vírgula: futsal, fotografia, games…" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
