@@ -99,7 +99,8 @@ export const USP: Community = {
 // (EMAp), Ciência de Dados e IA, Ciências Sociais, Comunicação Digital, Economia e Finanças etc. são só no Rio de
 // Janeiro; Brasília tem Administração e Administração Pública. Sem EAD de graduação. Cursos:
 // https://vestibular.fgv.br/ (consultado em 19/11/2026). Campi: https://eaesp.fgv.br/contato ;
-// https://direitosp.fgv.br/ (rodapé) ; https://eesp.fgv.br/ (rodapé).
+// https://direitosp.fgv.br/ (rodapé) ; https://eesp.fgv.br/ (rodapé) ; RI: vestibular.fgv.br/cursos/sao-paulo (seção
+// unidade: Campus FGV RI – Rua Itapeva, 474).
 export const FGV: Community = {
   id: 'fgv',
   name: 'Fundação Getulio Vargas',
@@ -109,8 +110,24 @@ export const FGV: Community = {
   invitePrefix: 'FGV',
   mainCampus: 'FGV São Paulo – Av. Nove de Julho (Bela Vista)',
   campuses: [
-    { name: 'FGV São Paulo – Av. Nove de Julho (Bela Vista)', address: 'Av. Nove de Julho, 2029 – Bela Vista' },
-    { name: 'FGV São Paulo – Rua Dr. Plínio Barreto (Bela Vista)', address: 'R. Dr. Plínio Barreto, 365 – Bela Vista' },
+    {
+      name: 'FGV São Paulo – Av. Nove de Julho (Bela Vista)', address: 'Av. Nove de Julho, 2029 – Bela Vista',
+      courses: [
+        'Administração Pública', 'Administração de Empresas',
+      ],
+    },
+    {
+      name: 'FGV São Paulo – Rua Dr. Plínio Barreto (Bela Vista)', address: 'R. Dr. Plínio Barreto, 365 – Bela Vista',
+      courses: [
+        'Direito', 'Economia',
+      ],
+    },
+    {
+      name: 'FGV São Paulo – Rua Itapeva (Bela Vista)', address: 'Rua Itapeva, 474 – Bela Vista',
+      courses: [
+        'Relações Internacionais',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. Alta: a TIC-FGV (alunos.tic.fgv.br, página 'FGV Student Identification
   // Accounts') diz que o aluno recebe a conta Office 365 A12345@fgv.edu.br e o alias nome.sobrenome@fgv.edu.br.
@@ -718,9 +735,31 @@ export const SENAC: Community = {
   invitePrefix: 'SENAC',
   mainCampus: 'Campus Santo Amaro',
   campuses: [
-    { name: 'Campus Santo Amaro', address: 'Av. Engenheiro Eusébio Stevaux, 823 – Santo Amaro' },
-    { name: 'Unidade Lapa Scipião', address: 'Rua Scipião, 67 – Lapa' },
-    { name: 'Unidade Tiradentes', address: 'Av. Tiradentes, 822 – Centro' },
+    {
+      name: 'Campus Santo Amaro', address: 'Av. Engenheiro Eusébio Stevaux, 823 – Santo Amaro',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas', 'Arquitetura e Urbanismo', 'Audiovisual',
+        'Ciência da Computação', 'Ciências Contábeis', 'Design', 'Design Gráfico', 'Design de Animação',
+        'Design de Moda', 'Educação Física', 'Engenharia da Computação', 'Engenharia de Produção',
+        'Engenharia de Software', 'Estética e Cosmética', 'Fotografia', 'Gastronomia', 'Gestão Comercial',
+        'Gestão Financeira', 'Gestão da Tecnologia da Informação', 'Gestão de Hospitalidade',
+        'Gestão de Recursos Humanos', 'Hotelaria', 'Inteligência Artificial', 'Jogos Digitais', 'Logística',
+        'Marketing', 'Nutrição', 'Processos Gerenciais', 'Produção Multimídia', 'Publicidade e Propaganda',
+        'Redes de Computadores', 'Sistemas de Informação', 'Sistemas para Internet',
+      ],
+    },
+    {
+      name: 'Unidade Lapa Scipião', address: 'Rua Scipião, 67 – Lapa',
+      courses: [
+        'Design de Animação', 'Fotografia',
+      ],
+    },
+    {
+      name: 'Unidade Tiradentes', address: 'Av. Tiradentes, 822 – Centro',
+      courses: [
+        'Enfermagem', 'Farmácia', 'Psicologia', 'Radiologia',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. baixa a média: senacsp.edu.br existe e tem MX no Microsoft 365 (tenant
   // educacional, típico de contas de alunos), mas não achei fonte oficial pública que diga que é o e-mail dos alunos
@@ -874,8 +913,23 @@ export const FIAP: Community = {
   invitePrefix: 'FIAP',
   mainCampus: 'Unidade Aclimação',
   campuses: [
-    { name: 'Unidade Aclimação', address: 'Av. Lins de Vasconcelos, 1264 – Aclimação' },
-    { name: 'Unidade Paulista', address: 'Av. Paulista, 1106 – Bela Vista' },
+    {
+      name: 'Unidade Aclimação', address: 'Av. Lins de Vasconcelos, 1264 – Aclimação',
+      courses: [
+        'Administração', 'Agentes Inteligentes', 'Análise e Desenvolvimento de Sistemas', 'Banco de Dados',
+        'Ciência da Computação', 'Design Gráfico', 'Engenharia Mecatrônica', 'Engenharia de Computação',
+        'Engenharia de Software', 'Gestão da Tecnologia da Informação', 'Gestão de Inteligência Artificial',
+        'Inteligência Artificial', 'Jogos Digitais', 'Marketing', 'Segurança Cibernética', 'Sistemas de Informação',
+      ],
+    },
+    {
+      name: 'Unidade Paulista', address: 'Av. Paulista, 1106 – Bela Vista',
+      courses: [
+        'Análise e Desenvolvimento de Sistemas', 'Banco de Dados', 'Ciência da Computação', 'Design Gráfico',
+        'Engenharia de Software', 'Gestão da Tecnologia da Informação', 'Gestão de Inteligência Artificial',
+        'Jogos Digitais', 'Marketing', 'Segurança Cibernética', 'Sistemas de Informação',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição. média: fiap.com.br é o domínio institucional (MX no Microsoft 365, usado
   // pelos canais de atendimento). Não achei fonte pública confirmando o formato do e-mail de aluno (relatos de

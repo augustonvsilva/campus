@@ -29,11 +29,48 @@ export const MACKENZIE: Community = {
   status: 'ativa',
   invitePrefix: 'MACK',
   mainCampus: 'Campus Higienópolis',
-  // Endereços conforme mackenzie.br (consultado em 19/11/2026).
+  // Endereços conforme mackenzie.br (consultado em 19/11/2026). Cursos por campus: editais do vestibular 2027/1
+  // (IN-091 Higienópolis, IN-093 Alphaville, IN-094 Campinas, IN-095 Medicina) e as páginas de cada curso.
+  // Medicina fica em Alphaville. Os cursos EAD aparecem nos três campi.
   campuses: [
-    { name: 'Campus Higienópolis', address: 'Rua da Consolação, 930 – Consolação' },
-    { name: 'Campus Alphaville', address: 'Av. Mackenzie, 905 – Tamboré', city: 'Barueri' },
-    { name: 'Campus Campinas', address: 'Av. Brasil, 1220 – Jardim Guanabara', city: 'Campinas' },
+    {
+      name: 'Campus Higienópolis', address: 'Rua da Consolação, 930 – Consolação',
+      courses: [
+        'Administração', 'Administração (Gestão de Comércio Exterior)',
+        'Análise e Desenvolvimento de Sistemas (EAD)', 'Arquitetura e Urbanismo',
+        'Banco de Dados: Análise, Mineração e Engenharia de Dados (EAD)', 'Cinema e Audiovisual',
+        'Ciência da Computação', 'Ciências Biológicas', 'Ciências Contábeis', 'Ciências Econômicas',
+        'Ciências da Religião (EAD)', 'Design', 'Direito', 'Engenharia Civil', 'Engenharia Elétrica',
+        'Engenharia Mecânica', 'Engenharia Química', 'Engenharia da Computação', 'Engenharia de Materiais',
+        'Engenharia de Produção', 'Farmácia', 'Filosofia (EAD)', 'Fisioterapia', 'Gastronomia (Tecnólogo)',
+        'Gestão Comercial (EAD)', 'Gestão Financeira (EAD)', 'Gestão de Recursos Humanos (EAD)', 'História (EAD)',
+        'Jornalismo', 'Letras', 'Letras: Português (EAD)', 'Marketing (EAD)', 'Matemática (EAD)', 'Nutrição',
+        'Pedagogia', 'Pedagogia (EAD)', 'Processos Gerenciais (EAD)', 'Psicologia', 'Publicidade e Propaganda',
+        'Química', 'Segurança Cibernética (EAD)', 'Sistemas de Informação', 'Teologia', 'Teologia (EAD)',
+      ],
+    },
+    {
+      name: 'Campus Alphaville', address: 'Av. Mackenzie, 905 – Tamboré', city: 'Barueri',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas (EAD)',
+        'Banco de Dados: Análise, Mineração e Engenharia de Dados (EAD)', 'Ciência da Computação',
+        'Ciências da Religião (EAD)', 'Direito', 'Filosofia (EAD)', 'Gestão Comercial (EAD)',
+        'Gestão Financeira (EAD)', 'Gestão de Recursos Humanos (EAD)', 'História (EAD)', 'Letras: Português (EAD)',
+        'Marketing (EAD)', 'Matemática (EAD)', 'Medicina', 'Pedagogia (EAD)', 'Processos Gerenciais (EAD)',
+        'Segurança Cibernética (EAD)', 'Sistemas de Informação', 'Teologia (EAD)',
+      ],
+    },
+    {
+      name: 'Campus Campinas', address: 'Av. Brasil, 1220 – Jardim Guanabara', city: 'Campinas',
+      courses: [
+        'Administração', 'Análise e Desenvolvimento de Sistemas (EAD)',
+        'Banco de Dados: Análise, Mineração e Engenharia de Dados (EAD)', 'Ciências da Religião (EAD)', 'Direito',
+        'Engenharia Civil', 'Engenharia de Produção', 'Filosofia (EAD)', 'Gestão Comercial (EAD)',
+        'Gestão Financeira (EAD)', 'Gestão de Recursos Humanos (EAD)', 'História (EAD)', 'Letras: Português (EAD)',
+        'Marketing (EAD)', 'Matemática (EAD)', 'Pedagogia (EAD)', 'Processos Gerenciais (EAD)',
+        'Segurança Cibernética (EAD)', 'Teologia (EAD)',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição os domínios usados por alunos.
   emailDomains: ['mackenzista.com.br', 'mackenzie.br'],
@@ -64,13 +101,40 @@ export const PUC_SP: Community = {
   invitePrefix: 'PUC',
   mainCampus: 'Campus Monte Alegre',
   // Conforme pucsp.br/universidade/campi-e-unidades-suplementares (consultado em 19/11/2026).
-  // O site chama o Monte Alegre de "Campus Perdizes". Sorocaba entra porque é onde fica Medicina.
+  // O site chama o Monte Alegre de "Campus Perdizes". Santana fica de fora por não ter graduação.
+  // Cursos por campus: Manual do Candidato do Vestibular de Verão 2027 (Nucvest), em que a Consolação aparece
+  // como "Marquês de Paranaguá". Sorocaba tem Enfermagem e Medicina.
   campuses: [
-    { name: 'Campus Monte Alegre', address: 'Rua Monte Alegre, 984 – Perdizes' },
-    { name: 'Campus Consolação', address: 'Rua Marquês de Paranaguá, 111 – Consolação' },
-    { name: 'Campus Ipiranga', address: 'Av. Nazaré, 993 – Ipiranga' },
-    { name: 'Campus Santana', address: 'Rua Voluntários da Pátria, 1653 – Santana' },
-    { name: 'Campus Sorocaba', address: 'Rua Joubert Wey, 290', city: 'Sorocaba' },
+    {
+      name: 'Campus Monte Alegre', address: 'Rua Monte Alegre, 984 – Perdizes',
+      courses: [
+        'Administração', 'Arte: História, Crítica e Curadoria', 'Ciência de Dados e Inteligência Artificial',
+        'Ciências Atuariais', 'Ciências Contábeis', 'Ciências Econômicas', 'Ciências Sociais',
+        'Comunicação das Artes do Corpo', 'Comunicação e Multimeios', 'Direito', 'Filosofia', 'Fisioterapia',
+        'Fonoaudiologia', 'História', 'Jornalismo', 'Letras - Análise de Linguagem',
+        'Letras - Português e Inglês - Licenciatura', 'Letras: Língua Inglesa - Tradução Inglês/Português',
+        'Pedagogia', 'Psicologia', 'Publicidade e Propaganda', 'Relações Internacionais', 'Serviço Social',
+      ],
+    },
+    {
+      name: 'Campus Consolação', address: 'Rua Marquês de Paranaguá, 111 – Consolação',
+      courses: [
+        'Ciência da Computação', 'Design', 'Engenharia Biomédica', 'Engenharia Civil', 'Engenharia de Produção',
+        'Engenharia de Sistemas Ciber Físicos', 'Jogos Digitais',
+      ],
+    },
+    {
+      name: 'Campus Ipiranga', address: 'Av. Nazaré, 993 – Ipiranga',
+      courses: [
+        'Teologia',
+      ],
+    },
+    {
+      name: 'Campus Sorocaba', address: 'Rua Joubert Wey, 290', city: 'Sorocaba',
+      courses: [
+        'Enfermagem', 'Medicina',
+      ],
+    },
   ],
   // TODO: confirmar com a instituição os domínios usados por alunos.
   emailDomains: ['pucsp.edu.br'],
